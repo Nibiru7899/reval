@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pytest:*)",
+      "Bash(ruff:*)",
+      "Bash(mypy:*)",
+      "Bash(python -m pytest:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git checkout -b:*)",
+      "Bash(git switch:*)",
+      "Bash(git log:*)",
+      "Bash(npm --prefix web:*)",
+      "Bash(.venv/Scripts/python:*)"
+    ],
+    "deny": [
+      "Bash(git push:*)",
+      "Read(./.env)",
+      "Read(**/kaggle.json)"
+    ]
+  }
+}

@@ -1,0 +1,63 @@
+[build-system]
+requires = ["hatchling>=1.24"]
+build-backend = "hatchling.build"
+
+[project]
+name = "reval"
+version = "0.0.1"
+description = "Continuous validation engine for engineering decisions: which conclusions survive a change, and the cheapest way to re-prove the rest."
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{ name = "Sai Krishna" }]
+keywords = ["verification", "validation", "engineering", "uncertainty", "traceability", "optimization"]
+classifiers = [
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Development Status :: 1 - Planning",
+]
+dependencies = [
+    "pydantic>=2.7",
+    "typer>=0.12",
+    "pyyaml>=6.0",
+    "networkx>=3.3",
+    "numpy>=1.26",
+    "scipy>=1.13",
+    "pint>=0.24",
+    "ortools>=9.10",
+    "sqlalchemy>=2.0",
+    "rich>=13.7",
+]
+
+[project.optional-dependencies]
+motor = ["pandas>=2.2", "pyarrow>=16", "scikit-learn>=1.5", "matplotlib>=3.9", "joblib>=1.4"]
+server = ["fastapi>=0.111", "uvicorn[standard]>=0.30", "alembic>=1.13"]
+postgres = ["psycopg[binary]>=3.1"]
+dev = ["pytest>=8.2", "pytest-cov>=5.0", "hypothesis>=6.100", "ruff>=0.5", "mypy>=1.10", "types-PyYAML"]
+
+[project.scripts]
+reval = "reval.cli.main:app"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/reval"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src", "examples/motor_thermal"]
+addopts = "-ra --strict-markers"
+markers = ["data: needs the downloaded motor dataset (skipped when absent)"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+
+[tool.ruff.format]
+exclude = ["*.md"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["reval"]
+mypy_path = "src"
