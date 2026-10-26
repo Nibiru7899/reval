@@ -11,6 +11,7 @@
       "Bash(git commit:*)",
       "Bash(git checkout -b:*)",
       "Bash(git switch:*)",
+      "Bash(git merge --ff-only:*)",
       "Bash(git log:*)",
       "Bash(npm --prefix web:*)",
       "Bash(.venv/Scripts/python:*)"

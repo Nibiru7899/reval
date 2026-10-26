@@ -54,7 +54,8 @@ Where a doc disagrees with this record, this record wins until the doc is fixed.
 
 ## Not applied
 
-- Permission additions to `.claude/settings.json` that an auditor suggested (`git merge`, `git branch`, `.venv/Scripts/reval`, extra denies). That is the user's call. The skill uses commands that are already allowed, where possible.
+- Permission additions to `.claude/settings.json` that an auditor suggested (`git branch`, `.venv/Scripts/reval`, extra denies). That is the user's call. The skill uses commands that are already allowed, where possible.
+- `Bash(git merge --ff-only:*)` was added to the allow list at the user's request (2026-10-26).
 
 ## Round 2 (re-verification, 2026-10-26)
 
