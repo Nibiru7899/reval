@@ -6,14 +6,24 @@
 
 | RQ | Question | Primary metric |
 |---|---|---|
-| RQ1 Impact accuracy | How accurately does ReVal identify the claims a change affects? | Impact recall (must be very high), precision |
-| RQ2 Safety | Does ReVal keep the unsupported-accept rate at or below "rerun everything"? | UAR_evidence, UAR_truth (non-inferiority) |
-| RQ3 Cost | How much revalidation cost does ReVal save? | Cost ratio vs. B0 and B1 |
-| RQ4 Applicability gating | Does AD + conformal gating reduce wrong acceptances of optimizer-proposed designs compared with point predictions? | UAR_truth on optimizer subjects; empirical conformal coverage |
+| RQ1 Impact accuracy | How accurately does ReVal identify the claims a change affects? | Impact recall (must be very high), precision, F2 |
+| RQ2 Safety | Does ReVal keep the unsupported-accept rate at or below "rerun everything"? | UAR_truth (primary), UAR_evidence, decision coverage |
+| RQ3 Cost | How much revalidation cost does ReVal save? | Paired log cost ratio vs. B1; cost ratio vs. B0; cost per claim decided |
+| RQ4 Applicability gating | Does AD + conformal gating reduce wrong acceptances of optimizer-proposed designs compared with point predictions? | UAR_truth on optimizer subjects (**Tier B only**); empirical conformal coverage on recorded test cycles (Tier A) |
 | RQ5 Usefulness (optional) | Do engineers reach correct decisions faster with ReVal reports? | Task accuracy and time, 5–8 participants |
 
-**Primary hypothesis H1:** compared with file-level dependency tracking (B1), ReVal has lower revalidation cost (RQ3) and an
-unsupported-accept rate that is non-inferior to rerun-all (B0) with margin δ = 1 percentage point (RQ2).
+**Primary hypothesis H1** (an intersection–union test: all parts must hold, so no multiplicity correction is needed within H1):
+1. **Cost:** the upper bound of the 95 % CI of the paired mean log(C_ReVal / C_B1) is < 0.
+2. **Safety vs. truth (primary):** the one-sided 97.5 % upper bound of UAR_truth(ReVal) − UAR_truth(B0) is < δ.
+3. **Safety vs. evidence:** the one-sided 97.5 % upper bound of UAR_evidence(ReVal) is < δ. (UAR_evidence(B0) ≡ 0 by definition, so this is a one-sample bound.)
+4. **Utility:** decision coverage after plan execution is ≥ that of B0 minus 2 pp. Without this condition, a method that marks everything Inconclusive would "pass" on safety.
+
+δ = 1 pp absolute is the planned margin. It is **re-justified from the pilot estimate** of UAR_truth(B0) before pre-registration and is also reported as a relative margin.
+**H2 (impact recall):** the one-sided 97.5 % lower bound (stratified cluster bootstrap) of impact recall is ≥ 0.98, tested separately on Tier A and on Tier B excluding T9 (T9 reported descriptively).
+
+**H3 (applicability gating):** in Tier B, on O1 optima, UAR_truth(ReVal-gated) < UAR_truth(point-acceptance). One-sided test: the 97.5 % upper bound of the paired difference (gated − point, paired by optimizer run) is < 0. This is the primary contrast of the 2 × 2 {O1, O3} × {point, gated} design with N ≥ 50 runs per cell.
+
+H2 and H3 are tested at α = 0.05 with Holm correction across {H2, H3}.
 
 ## 2. ReValBench structure
 
@@ -25,37 +35,52 @@ so ReVal is exercised exactly as a user would exercise it.
 
 | # | Change type | Tier | Example | Expected effect |
 |---|---|---|---|---|
-| T1 | Data append (in envelope) | A | Add a `reserve` profile similar to `train` | Model retrained → ML evidence stale. Physics evidence unaffected unless LPTN re-identified. |
+| T1 | Data append (in envelope) | A | Add a `reserve` profile similar to `train` | All evidence that depends on artifacts derived from `measures` (ML models, LPTN, drive map) is invalidated through the constructive trace (D3), whether or not those artifacts are regenerated. Claims depending only on non-derived artifacts (shaft) are unaffected. |
 | T2 | Data append (expands envelope) | A | Add a profile with higher coolant temperatures | As T1, plus previously OOD claims may become decidable |
-| T3 | Data correction | A | Sensor offset fix on one profile's `pm` column | Only artifacts derived from that column/profile |
+| T3 | Data correction | A | Sensor offset fix on one profile's `pm` column | Evidence through column-selector deps on other columns, with scope outside the profile, stays fresh. Everything depending on artifacts derived from `measures` (ML, LPTN, drive map) is invalidated (D3). Truth comes from the S′ data. |
 | T4 | Model change | A | Hyperparameter change, or M1 → M2 | ML evidence of that model only |
 | T5 | Requirement tightened / loosened | A | Limit 110 → 105 °C | All claims on that requirement re-verdicted. **No re-run needed** if intervals are still decisive. |
 | T6 | Assumption range change | A/B | Coolant range 18–70 → 18–80 °C | Evidence with that assumption in scope |
-| T7 | Small parameter perturbation | B | Coolant flow −5 % | Tolerance carry-forward should keep most evidence |
-| T8 | Large parameter change | B | Coolant flow −25 % | Invalidation, physics re-sim, possibly bench |
+| T7 | Small parameter perturbation | B | Coolant `flow_scale` 1.00 → 0.95 | Tolerance carry-forward should keep most evidence |
+| T8 | Large parameter change | B | Coolant `flow_scale` 1.00 → 0.75 | Invalidation, physics re-sim, possibly bench |
 | T9 | Physical degradation (unknown to design models) | B | World R_ic × 1.3 with no parameter change declared | **Nothing should detect this from the change set alone.** It measures how often stale-but-undetected support exists. This is an honesty check, reported as a limitation. |
 | T10 | Unrelated change | A | Shaft drawing revision, README edit | Only the shaft claim, or nothing |
 | T11 | Producer code change | A | Refactor `lptn_sim` (no behavior change) / bug fix (behavior change) | Fail-closed invalidation. Measure the cost of false alarms. |
 | T12 | Compound | A/B | Random 2–3 of the above | Interaction effects |
 
-Target size: ≈ 30 instances per type × 12 types × 3 seeds ≈ **1,000+ scenarios**, each with ~80 claims.
+"Tier A" means **Tier A truth is real measured data only**. Tier A scenarios may still contain synthetic subjects, but those
+contribute only to RQ1/RQ3, never to UAR_truth.
+
+**Size.** ~30 instances per type × 12 types, built on **≥ 30 distinct base snapshots** (different trained-model sets, splits of
+`reserve`, and limit levels). Each scenario has ≈ 170 claims: ~80 subjects × 2 thermal targets (`pm_peak`, `sw_peak`), plus the
+non-thermal shaft and current-limit claims. The final instance counts are fixed after the pilot (§6) from measured runtime.
 
 ### Ground truth (two oracles, never conflated)
 
 - **Evidence oracle (B0 run):** rerun *every* producer in *S′* and assess. Claim *c* is **truly affected** if its B0 status in *S′*
-  differs from its status in *S*, or if any evidence value it relies on moved by more than ε (ε = 0.1 K). This defines RQ1 labels
-  and UAR_evidence.
-- **Truth oracle:** the actual satisfaction of the requirement. Tier A: the *measured* peak on recorded cycles. Tier B: the world
-  model's noise-free peak. This defines UAR_truth.
+  differs from its status in *S*, or if any evidence value referenced by **any clause of Π_c in either S or S′** moved by more than ε.
+  - ε is set per target to **0.1 · median conformal half-width q̂** and pre-registered. It is not a fixed 0.1 K.
+  - Producer randomness and sensor noise use **common random numbers** keyed by (scenario_id, producer, subject). They are identical for S and S′ and for all methods, so oracle labels never flip on noise.
+  - This defines the RQ1 labels and UAR_evidence.
+  - *Scope note:* the oracle uses ReVal's own assessment rules, so RQ1 measures impact analysis **given a correct assessment engine**. Assessment-engine correctness is covered separately by property tests I1–I7 (`docs/03` §5).
+- **Truth oracle:** the actual satisfaction of the requirement.
+  - Tier A: the *measured* peak on recorded **test** cycles, taken from the S′ data. `reserve` profiles are never claim subjects, because they may be appended to training.
+  - Tier B: the world model's noise-free peak.
+  - This defines UAR_truth. Synthetic and optimizer subjects have truth in Tier B only.
 
-## 3. Metrics (computed per scenario, aggregated over scenarios)
+## 3. Metrics
 
-- **Impact recall / precision**: over claims, predicted-affected = status changed *or* any evidence not exact-fresh.
-- **UAR_evidence** = |claims accepted by method ∧ not accepted by B0| / |claims accepted by method|.
-- **UAR_truth** = |claims accepted by method ∧ requirement actually violated| / |claims accepted by method|.
+All ratio metrics are computed as a **ratio of sums over all claims in the analysis set**, pooled within each bootstrap resample.
+They are never a mean of per-scenario ratios. Scenarios with zero accepted claims contribute 0 to both numerator and denominator.
+WAIVED claims are excluded (benchmarks contain no waivers).
+
+- **Impact recall / precision / F2:** over claims. Predicted-affected = status changed *or* any evidence not exact-fresh. Fail-closed invalidation inflates recall by construction, so precision is always reported next to it.
+- **UAR_evidence** = Σ|accepted by method ∧ not accepted by B0| / Σ|accepted by method|.
+- **UAR_truth** = Σ|accepted by method ∧ requirement actually violated| / Σ|accepted by method|.
+- **UAR\*** (per-claim risk) = Σ|accepted ∧ bad| / Σ|all claims|. This can't be gamed by accepting less.
 - **Decision coverage** = share of claims that end in a decided status after executing the plan.
-- **Cost ratio** = plan cost / B0 cost. Also report absolute cost and the number of bench runs.
-- **False-alarm cost** = cost spent on runs whose evidence value moved < ε (wasted work).
+- **Cost:** plan cost / B0 cost; paired log(C_ReVal / C_B1); absolute cost; number of bench runs; **cost per claim decided** (coverage differs between methods).
+- **False-alarm cost** = cost spent on runs whose evidence value moved < ε (the same pre-registered ε).
 - **Reproducibility** = share of assessments whose `input_hash` and status are identical on re-execution (target 100 %).
 - **Planner optimality gap** (greedy vs. CP-SAT) and solve time.
 
@@ -71,30 +96,46 @@ Target size: ≈ 30 instances per type × 12 types × 3 seeds ≈ **1,000+ scena
 
 ## 5. Ablations
 
-| Id | Remove | Tests |
+| Id | Remove / change | Tests |
 |---|---|---|
 | A1 | Field-level selectors (whole-artifact only) | Value of fine-grained hashing |
 | A2 | Tolerance carry-forward | The cost-saving vs. safety trade-off (the core risk of the contribution) |
 | A3 | Scope-based out-of-scope freshness | Value of scope boxes |
 | A4 | AD gate (strict vs. relaxed vs. off) | RQ4 |
-| A5 | Conformal (point ± fixed margin instead) | Value of calibrated intervals |
+| A5 | Conformal → point ± fixed margin | Value of calibrated intervals |
 | A6 | ILP → greedy | Planner optimality |
 | A7 | κ ∈ {1.0, 1.5, 2.0, 3.0} | Sensitivity of safety to the safety factor |
+| A8 | Split conformal → CQR / normalized scores | Value of locally adaptive intervals |
 
-## 6. Statistics
+A2 and A7 are primary ablations. Tolerance sensitivities and physics evidence come from the same design-time LPTN, so they share one
+model-form error (see §7).
+
+## 6. Statistics and pre-registration
 
 - Paired comparisons across scenarios (the same scenario under each method).
-- 95 % CIs by **cluster bootstrap over scenario seeds and change types**, because claims within a scenario are not independent.
-- Non-inferiority for UAR: the upper 95 % bound of (UAR_ReVal − UAR_B0) must be < δ.
+- **Stratified cluster bootstrap:** strata = change type (a fixed design factor, never resampled across). Clusters = **base snapshot**
+  (all scenarios and claims derived from the same base snapshot / trained-model set). Clusters are resampled with replacement within
+  each stratum, 10,000 resamples, percentile (or BCa) intervals. Pooled estimates weight strata by their design counts.
+- Non-inferiority: the **one-sided 97.5 % upper bound** (= the upper limit of a two-sided 95 % CI) of the paired difference must be < δ.
 - Report per change type, not just pooled. Pooled numbers hide failures on T7/T8, where the risk lives.
-- Pre-register the hypotheses and the analysis plan in `docs/research/preregistration.md` **before** running the final benchmark (week 19). Changes after that are reported as deviations.
+- **RQ4 / H3 design:** 2 × 2 {O1, O3} × {point-acceptance, ReVal-gated acceptance}, N ≥ 50 optimizer runs per cell (DE seeds × limit levels),
+  in Tier B. Primary contrast: ReVal-gated vs. point-acceptance on O1 optima (the gating effect). Secondary: O3 vs. O1 under ReVal gating.
+  The conformal guarantee is marginal, not per claim, so predict the nonzero UAR_truth floor near the limit (≈ α) in the pre-registration.
+- **Timeline:** a pilot on *development seeds* runs in week 21 and fixes runtime, instance counts, ε, and δ. Pre-registration is committed in
+  `docs/research/preregistration.md` **at the end of week 21**. The final run is in week 22 on **fresh seeds never used in the pilot**.
+  Changes after that are reported as deviations.
 
 ## 7. Threats to validity (write these into the paper)
 
-- **Internal:** tolerance bounds are estimated from the same LPTN family used to generate Tier B truth. Mitigated by structural difference, injected model-form error, and A7.
-- **Construct:** costs are assumed. Mitigated by cost-sensitivity analysis.
+- **Internal:**
+  - Tolerance bounds come from the same LPTN family used to generate Tier B truth. Mitigated by structural difference, injected model-form error, and A2/A7.
+  - Physics evidence and carry-forward bounds share the design LPTN's model-form error.
+  - Tier B ML models are retrained on world-model trajectories, so ML error in Tier B is not confounded by the world-to-real gap. The world model's fit error on test profiles is reported separately as model-form discrepancy.
+  - The world model is calibrated on train + reserve only.
+- **Construct:** costs are assumed. Mitigated by cost-sensitivity analysis (bench at 20, 100, 500).
 - **External:** one motor, one domain. Mitigated, partially, by a small second domain (stretch: a heat-sink or beam example with an analytic truth model) showing the SDK generalizes. The *metrics* are only claimed for the motor domain.
-- **Conclusion:** many scenarios share base snapshots. Handled with cluster bootstrap.
+- **Conclusion:** many scenarios share base snapshots. Handled with the stratified cluster bootstrap (§6).
+- **Conformal:** calibration windows from the same profile aren't exchangeable. Coverage on drive-map (synthetic) subjects can only be checked in Tier B and is reported separately.
 - **T9-type changes** (undeclared physical drift) are invisible to any change-based method. ReVal must say this, and the paper should present it as a limitation that motivates monitoring.
 
 ## 8. Usability check (RQ5, lightweight)

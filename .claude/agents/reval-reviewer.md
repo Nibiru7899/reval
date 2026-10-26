@@ -26,7 +26,7 @@ A task ID (for example `P3-02`) and a diff range (default `main...HEAD`). Get th
 9. **Honest language:** no "safe", "certified", or "verified to standard" in code, UI copy, or reports.
 10. **Quality:** type hints, docstrings on public functions, readable names consistent with the domain model, no dead code.
 
-You may run read-only commands: `git diff`, `git log`, `pytest`, `ruff check`, `mypy src`.
+You may run read-only commands: `git diff`, `git log`, `.venv/Scripts/python -m pytest`, `.venv/Scripts/python -m ruff check .`, `.venv/Scripts/python -m mypy src` (use `.venv/bin/python` outside Windows).
 
 ## Output format
 ```

@@ -33,8 +33,8 @@ ReVal builds on six existing lines of work. Its proposed contribution is the **c
 individual engineering decisions and evaluated on a benchmark. No single component below is claimed as new.
 
 > **Citation hygiene:** every reference must be checked against the primary source before it appears in a report or
-> paper. References marked ✅ are well-established and were known to the plan author. References marked ⚠️ came from
-> the original Codex text and could **not** be verified while writing this plan. Find the primary source or drop them.
+> paper. References marked ✅ are well-established; their bibliographic details were spot-checked in the 2026-10-26 plan audit
+> (`docs/log/2026-10-26-audit-decisions.md`). Items from the original Codex text were resolved in §2.9.
 
 ### 2.1 Truth maintenance and belief revision ✅
 - Doyle, J. (1979). *A truth maintenance system.* Artificial Intelligence 12(3).
@@ -52,30 +52,31 @@ individual engineering decisions and evaluated on a benchmark. No single compone
 ### 2.3 Regression test selection (software engineering) ✅
 - Gligoric, Eloussi, Marinov (2015). *Practical regression test selection with dynamic file dependencies* (Ekstazi). ISSTA.
 - Legunsen et al. (2016). *An extensive study of static regression test selection in modern software evolution.* FSE.
-- Yoo & Harman (2012). *Regression testing minimization, selection and prioritization: a survey.* STVR.
+- Yoo & Harman (2012). *Regression testing minimization, selection and prioritization: a survey.* STVR 22(2).
 - **Relevance:** "safe" RTS (never skip a test whose outcome could change) is exactly ReVal's safety requirement.
   Test-suite *minimization* is a set-cover problem. Engineering evidence differs because outcomes are continuous and
   uncertain, and tests vary in cost by orders of magnitude.
 
 ### 2.4 Model credibility and V&V standards ✅
-- ASME V&V 40-2018: *Assessing credibility of computational modeling through verification and validation* (risk-informed credibility: model influence × decision consequence).
+- ASME V&V 40-2018: *Assessing Credibility of Computational Modeling through Verification and Validation: Application to Medical Devices* (risk-informed credibility: model influence × decision consequence). Its scope is medical devices. ReVal borrows only the risk-informed framework.
 - NASA-STD-7009 (Standard for Models and Simulations) and its credibility assessment scale.
 - Oberkampf & Roy (2010). *Verification and Validation in Scientific Computing.* Cambridge UP.
-- Sandia PCMM (Predictive Capability Maturity Model).
-- National Academies (2023/2024). *Foundational Research Gaps and Future Directions for Digital Twins* (stresses VVUQ).
+- Oberkampf, Pilch, Trucano (2007). *Predictive Capability Maturity Model for Computational Modeling and Simulation.* Sandia report SAND2007-5948 (PCMM).
+- National Academies of Sciences, Engineering, and Medicine (2024). *Foundational Research Gaps and Future Directions for Digital Twins.* doi:10.17226/26894 (stresses VVUQ).
 - **Relevance:** these define *what* credible evidence is. ReVal's evidence policies encode V&V-40-style risk tiers in
   machine-checkable form. ReVal does **not** implement any standard, and the report must say so.
 
 ### 2.5 Assurance cases ✅
 - Kelly, T. (1998). *Arguing safety* (PhD thesis, York). Goal Structuring Notation (GSN).
 - Denney & Pai, AdvoCATE and work on dynamic / automated assurance cases (NASA Ames).
+- Denney, Pai, Habli (2015). *Dynamic safety cases for through-life safety assurance.* ICSE (NIER track). (Details from memory; verify.)
 - Work on assurance-case change impact analysis (safety case maintenance).
 - **Relevance:** this is the closest conceptual neighbor. A ReVal claim with its evidence policy is a small, quantitative
   assurance argument. The prior-art review must check carefully how far *dynamic assurance cases* already go toward
   automatic re-evaluation and cost-optimal restoration.
 
 ### 2.6 Uncertainty quantification and applicability domain ✅
-- Angelopoulos & Bates (2021). *A gentle introduction to conformal prediction and distribution-free UQ.*
+- Angelopoulos & Bates (2021). *A gentle introduction to conformal prediction and distribution-free UQ.* arXiv:2107.07511 (later in Foundations and Trends in ML, 2023).
 - Romano, Patterson, Candès (2019). *Conformalized quantile regression.* NeurIPS.
 - Tibshirani, Barber, Candès, Ramdas (2019). *Conformal prediction under covariate shift.* NeurIPS.
 - Applicability-domain methods from QSAR (OECD validation principles): range box, distance-to-training, density.
@@ -83,29 +84,35 @@ individual engineering decisions and evaluated on a benchmark. No single compone
   outside the data, which is why ReVal gates conformal bounds behind an applicability-domain check.
 
 ### 2.7 Domain-specific: PMSM thermal modeling ✅
-- Kirchgässner, Wallscheid, Böcker. *Data-driven permanent magnet temperature estimation in synchronous motors with supervised machine learning* (IEEE, ~2021) and related work.
-- Kirchgässner, Wallscheid, Böcker (2023). *Thermal neural networks: Lumped-parameter thermal modeling with state-space machine learning.* Engineering Applications of AI 117. arXiv:2103.16323. (Reports TNN MSE 3.18 K² with 64 parameters, against an expert LPTN at 3.64 K² with 34 parameters.)
-- Wallscheid & Böcker (2016). *Global identification of a low-order lumped-parameter thermal network for permanent magnet synchronous motors.* IEEE Trans. Energy Conversion.
-- Dataset: *Electric Motor Temperature*, Paderborn University LEA, Kaggle `wkirgsn/electric-motor-temperature`. 185 h at 2 Hz from a 52 kW automotive traction PMSM.
+- Kirchgässner, Wallscheid, Böcker (2021). *Data-Driven Permanent Magnet Temperature Estimation in Synchronous Motors with Supervised Machine Learning: A Benchmark.* IEEE Trans. Energy Conversion 36(3):2059–2067. doi:10.1109/TEC.2021.3052546. arXiv:2001.06246.
+- Kirchgässner, Wallscheid, Böcker (2021). *Estimating Electric Motor Temperatures with Deep Residual Machine Learning.* IEEE Trans. Power Electronics (believed 36(7); verify volume/pages). **This is the citation the Kaggle dataset page requests.**
+- Kirchgässner, Wallscheid, Böcker (2023). *Thermal neural networks: Lumped-parameter thermal modeling with state-space machine learning.* Engineering Applications of AI 117, article 105537. arXiv:2103.16323. (Reports a small TNN at MSE 3.18 K² with 64 parameters, against an expert LPTN at 3.64 K² with 34 parameters. Its largest HPO-optimal TNN reaches 2.87 K² with 1,525 parameters.)
+- Wallscheid & Böcker (2016, online 2015). *Global identification of a low-order lumped-parameter thermal network for permanent magnet synchronous motors.* IEEE Trans. Energy Conversion 31(1):354–365.
+- Dataset: *Electric Motor Temperature*, Paderborn University LEA, Kaggle `wkirgsn/electric-motor-temperature` (v3, 2021-04-26, CC BY-SA 4.0). 185 h at 2 Hz from a 52 kW (22 kW nominal) automotive traction PMSM. `torque` is estimated from currents/voltages, not measured.
 
 ### 2.8 Commercial / adjacent tools
 - SmartUQ (UQ, calibration, DOE). Ansys Minerva and Siemens Teamcenter Simulation (SPDM, traceability).
-  Requirements tools (IBM DOORS, Polarion, Jama). MBSE (Capella, SysML v2).
+- Requirements tools (IBM DOORS, Polarion, Jama). MBSE (Capella, SysML v2).
+- OpenModelica traceability: *an integrated traceability system inside OpenModelica*, MDPI Electronics 10(8):983 (2021). Graph-based traceability and change-impact analysis across requirements and simulations. Authors not yet retrieved (likely Mengist, Pop et al., Linköping); confirm.
+- GOV.UK (Dstl / National Digital Twin Programme), *Digital twin definition*, published 29 Oct 2025. Cite only for what the text actually says.
 - MLflow, DVC, W3C PROV (provenance).
 - **Positioning:** these are large, proprietary, or provenance-only. None of them, as far as this plan's author knows, combines
   *decision-level* freshness, applicability gating, and cost-optimal revalidation in an open, benchmarked workflow.
   **This must be verified in the formal prior-art review (Phase 0).**
 
-### 2.9 Items from the original concept that need verification ⚠️
-- "December 2025 survey of 50 industry and academic participants on simulation credibility" (Springer). Find the paper or drop it.
-- "UK government's 2025 digital-twin definition requiring validation envelopes and assumption sets". Find the primary document.
-- "OpenModelica traceability research, 2021 (MDPI)". Likely real (Linköping / OpenModelica traceability work). Get the exact citation.
-- "Reliability-based model-validation research, 2026 (ScienceDirect)". Find it or drop it.
-- "Simulator-backed engineering agents, August 2026 (arXiv)". Find it or drop it.
+### 2.9 Items from the original concept (resolved in the 2026-10-26 audit)
+
+| Original claim | Outcome | Action |
+|---|---|---|
+| OpenModelica traceability research, 2021 (MDPI) | **Found:** MDPI Electronics 10(8):983, April 2021 | Cited in §2.8. Confirm the author list. |
+| UK government's 2025 digital-twin definition "requiring validation envelopes and assumption sets" | **Partially found:** GOV.UK *Digital twin definition* (Dstl / NDTP), 29 Oct 2025. Nothing found supports the "validation envelopes and assumption sets" wording. | Cite the definition only for what it says. Drop the envelope claim unless it is in the text. |
+| December 2025 Springer survey of 50 participants on simulation credibility | **Not found** | Dropped |
+| Reliability-based model-validation research, 2026 (ScienceDirect) | **Not found** | Dropped |
+| Simulator-backed engineering agents, August 2026 (arXiv) | **Not found.** The only Aug 2026 hit (arXiv:2608.24650) is about LLM-serving simulators, which isn't relevant. | Dropped |
 
 ## 3. Claimed contribution (to be defended, not assumed)
 
-1. **A formal model** of decision-level evidence freshness with four-valued claim status and *tolerance-aware invalidation*, with stated soundness conditions.
+1. **A formal model** of decision-level evidence freshness with five-valued claim status (four in benchmarks, which contain no waivers) and *tolerance-aware invalidation*, with stated soundness conditions.
 2. **A revalidation planner** that formulates evidence restoration as an ILP over evidence-policy alternatives, with shared tests and a budgeted variant.
 3. **ReValBench**, a public benchmark of controlled engineering changes with ground truth on a real motor dataset, including baselines.
 4. **An open-source implementation** (library, CLI, UI, CI action) and an empirical study answering RQ1–RQ5.

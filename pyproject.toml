@@ -42,9 +42,12 @@ packages = ["src/reval"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-pythonpath = ["src", "examples/motor_thermal"]
-addopts = "-ra --strict-markers"
-markers = ["data: needs the downloaded motor dataset (skipped when absent)"]
+pythonpath = ["src", ".", "examples/motor_thermal"]
+addopts = "-ra --strict-markers --import-mode=importlib"
+markers = [
+    "data: needs the downloaded motor dataset (skipped when absent)",
+    "slow: long-running (benchmark, identification); deselect with -m 'not slow'",
+]
 
 [tool.ruff]
 line-length = 110

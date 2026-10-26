@@ -12,7 +12,7 @@ Do exactly **one** task per invocation. Follow the steps in order.
 2. Read `docs/tasks/BACKLOG.md`.
 3. Select a task:
    - If the user named a task ID, use it.
-   - Otherwise take the **lowest-ID** task with status `todo`, owner `sonnet`, and every dependency `done`.
+   - Otherwise take the **lowest-ID** task with status `todo`, owner `sonnet` or `sonnet+human-review`, and every dependency `done` or `review`. Never pick `human` tasks.
    - If none qualifies, stop and report which tasks are blocked and by what.
 4. In BACKLOG.md, set that task's status to `in-progress`.
 5. Open the task's spec in its phase file (`docs/tasks/phase-*.md`). Read every doc listed under **Read first**, plus the `docs/10-interfaces.md` sections it references. Signatures in `docs/10-interfaces.md` are binding.
@@ -20,7 +20,7 @@ Do exactly **one** task per invocation. Follow the steps in order.
 ## 2. Branch
 ```bash
 git switch main
-git checkout -b feat/<task-id-lowercase>-<short-slug>   # e.g. feat/p2-03-yaml-hasher
+git checkout -b feat/<task-id-lowercase>-<short-slug>   # e.g. feat/p2-04-hashers
 ```
 Use `fix/`, `docs/`, or `bench/` instead of `feat/` if the task type says so.
 
@@ -37,12 +37,12 @@ If the spec, the interfaces, or the domain model conflict or leave a semantic de
 3. Commit the docs change only, and report. Purely mechanical choices (naming a private helper) don't need a question.
 
 ## 5. Checks (all must pass)
-Windows venv: `.venv/Scripts/python -m <tool>`. Elsewhere use `uv run` or the active venv.
+Windows venv shown. Elsewhere, replace `.venv/Scripts/python` with `.venv/bin/python` or `uv run python`.
 ```bash
-ruff check .
-ruff format --check .
-mypy src
-pytest
+.venv/Scripts/python -m ruff check .
+.venv/Scripts/python -m ruff format --check .
+.venv/Scripts/python -m mypy src
+.venv/Scripts/python -m pytest
 ```
 Also run any extra command the task lists (for example `reval status` on the example project).
 
@@ -50,12 +50,12 @@ Also run any extra command the task lists (for example `reval status` on the exa
 Invoke the `reval-reviewer` subagent on the diff (`git diff main...HEAD`). Pass it the task ID. Fix every **blocker** and **major** finding, then re-run step 5. Minor findings: fix them or note them in the commit body. Optionally invoke `spec-checker` with the task ID to confirm the acceptance criteria.
 
 ## 7. Finish
-1. In BACKLOG.md, set the status to `done` (or `review` if a human must check something, such as a plot or chosen limits).
+1. In BACKLOG.md, set the status to `done`. Use `review` instead when the owner is `sonnet+human-review` (always), or when the task has a `NEEDS HUMAN` item.
 2. Commit with Conventional Commits, referencing the task ID:
    ```
-   feat(core): freshness classification (P3-02)
+   feat(core): freshness classification (P3-03)
 
    <what and why, any deviations from spec>
    ```
-3. **Never `git push`.** Never merge into `main` unless the user tells you to.
+3. **Never `git push`. Never merge into `main`.** The user fast-forward-merges each finished branch before the next task starts (BACKLOG.md, decision D26).
 4. Report in ≤ 5 lines: the task, files changed, check results, reviewer outcome, the next ready task.

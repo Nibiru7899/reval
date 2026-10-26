@@ -14,11 +14,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # reval diff reads lock files at other revisions
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - name: Install
-        run: python -m pip install -e ".[dev]"
+        run: python -m pip install -e ".[dev,motor,server]"
       - name: Lint
         run: |
           ruff check .
@@ -26,4 +28,4 @@ jobs:
       - name: Type-check
         run: mypy src
       - name: Test
-        run: pytest --cov=reval --cov-report=term-missing
+        run: pytest -m "not data and not slow" --cov=reval --cov-report=term-missing

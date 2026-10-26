@@ -45,10 +45,12 @@ and property-testable.
   1. **Structural:** hash comparison at field granularity (JSON-pointer for params, column + row-range for datasets, model hash).
   2. **Scope:** does the change intersect the evidence's declared validity scope? (Example: new data rows outside the claim's duty-cycle envelope don't touch an evidence item whose scope is that envelope.)
   3. **Tolerance:** is the magnitude of the change provably below the evidence's declared sensitivity bound?
-- Unknown change kinds, or evidence with no declared scope or tolerance, **fail closed** (treated as invalidated).
+- Unknown change kinds, or evidence with no declared scope or tolerance, **fail closed** (treated as invalidated). So do subject changes, upstream changes of derived
+  artifacts (hash folding, D3), and whole-artifact dependencies on a changed artifact. Exact rules: `10-interfaces.md` §4.3.
 
 ### E3 — Validity
-- For each claim, evaluates its evidence policy against the *fresh* evidence available.
+- For each claim, evaluates its evidence policy against the *fresh* evidence available. It is history-free: the status depends only on the current snapshot and the
+  evidence with its freshness classes, never on earlier assessments (D4).
 - Evidence-level checks: applicability domain (is the subject inside the model's validated envelope?), calibrated
   interval vs. requirement limit (conformal), agreement between independent sources, assumption satisfaction.
 - Produces an `Assessment`: status, reasons (machine-readable codes + human text), the evidence used, and a content hash of all inputs.
@@ -66,7 +68,7 @@ See [04-algorithms.md](04-algorithms.md) for the formal definitions.
 | Decision | Choice | Why |
 |---|---|---|
 | Source of truth for metadata | `reval.yaml` manifest + `@reval.producer` decorators in the user's repo | Explicit, reviewable in PRs, versioned with git |
-| Snapshot identity | Merkle hash over all artifact-field hashes and manifest | Same project state ⇒ same snapshot id, on any machine |
+| Snapshot identity | `content_id` of the canonical snapshot JSON, excluding `id` and `git_rev` (D1) | Same project state ⇒ same snapshot id, on any machine and at any commit |
 | Git integration | The snapshot is committed as `reval.lock.json` (ADR 0005), so `reval diff HEAD~1 HEAD` reads both locks via `git show` | The "CI for evidence" story. Works even though data and models are git-ignored. |
 | Store | SQLAlchemy "document tables" (indexed key columns + a JSON body). SQLite by default, PostgreSQL via URL (ADR 0003). | Local-first. Postgres for multi-user and the demo deployment. Domain objects stay the single schema. |
 | Evidence results | Stored with full provenance: producer id + code hash, input version hashes, env (package versions), seed, cost, wall time | Needed for reproducibility and the "reuse" decision |
@@ -83,7 +85,9 @@ ReVal/
 ├── README.md
 ├── pyproject.toml            # single Python project, src layout
 ├── src/reval/
-│   ├── core/                 # pure engines: graph.py impact.py validity.py planner.py status.py
+│   ├── core/                 # pure engines: canonical.py selectors.py graph.py diff.py freshness.py verdicts.py status.py planner.py
+│   ├── uq/                   # conformal + applicability-domain helpers for producers (pure numpy/scipy)
+│   ├── errors.py             # all ReVal exception types
 │   ├── domain/               # pydantic models: artifacts, evidence, claims, policies, snapshot
 │   ├── manifest/             # reval.yaml schema + loader + unit handling
 │   ├── hashing/              # file/field/dataframe/model hashers
@@ -106,15 +110,15 @@ ReVal/
 
 ## 5. Data flow for one change (example)
 
-1. The engineer edits `params/cooling.yaml: coolant.flow_lpm 8.0 → 6.5` and commits.
-2. `reval diff HEAD~1 HEAD` builds both snapshots. E2 reports `FieldChanged(params/cooling.yaml#/coolant/flow_lpm, 8.0→6.5)`.
-3. Influence cone: the LPTN parameter `R_coolant` is derived from `flow_lpm`. Evidence `lptn_sim(DC-07)` and `bench(DC-03)` depend on it.
-   ML evidence trained on data recorded at 8.0 L/min has `flow_lpm` in its assumption scope.
-4. Tolerance check: the declared sensitivity of peak T_pm to flow is ~1.9 K per L/min. Δ = 1.5 L/min ⇒ up to ~2.9 K, which exceeds the
-   2 K margin on DC-07 ⇒ stale. DC-02 has a 15 K margin ⇒ that evidence stays fresh.
-5. E3: DC-07 → **Stale**. DC-02 → **Supported**. The mechanical-dimension claim M-01 isn't in the cone and stays **Supported**.
-6. E4: the cheapest restoration of DC-07 under the *high-criticality* policy is one LPTN re-simulation (cost 3), plus ML re-evaluation
-   with the new assumption (cost 1). It recommends **no** bench run, because the policy alternative "ML-in-domain + independent physics agreement" is satisfiable.
-7. `reval run --plan latest` executes the producers, stores the new evidence, and re-assesses. The report records everything with hashes.
+1. The engineer edits `params/cooling.yaml: flow_scale 1.0 → 0.95` (5 % less coolant flow) and commits the code and the regenerated `reval.lock.json`.
+2. `reval diff HEAD~1 HEAD` reads both locks. E2 reports `FIELD_CHANGED(cooling#/flow_scale, 1.0 → 0.95, Δ = −0.05)`.
+3. Relevance: `lptn_sim` evidence declares `cooling#/flow_scale` with a tolerance (the LPTN maps it to `R_ic ∝ flow_scale^-0.8`). ML evidence declares it **without** a
+   tolerance, because the training data contains no flow variation.
+4. Excuse: for `lptn_sim`, the raw sensitivity is ~6 K per unit and κ = 1.5, so the inflation is 1.5 · 6 · 0.05 ≈ 0.45 K → CARRY_FORWARD. On DC-02 (15 K margin) the widened
+   interval still passes. On DC-07 (0.3 K margin) it becomes INCONCLUSIVE. The ML evidence is INVALIDATED (`MISSING_TOLERANCE`) everywhere.
+5. E3 under the *high* policy: DC-02 has a fresh measurement → **Supported**. DC-07 → **Stale** (support lost to the change). The shaft claim isn't in the cone and stays **Supported**.
+6. E4: the cheapest restoration of DC-07 is one ML re-evaluation under the new state (cost 1) plus one LPTN re-simulation (cost 5), using the clause
+   "physics + independent in-domain ML". It recommends **no** bench run (cost 100).
+7. `reval run --plan <id>` executes the producers, stores the new evidence append-only, and re-assesses. The report records everything with hashes.
 
 (The numbers are illustrative.)

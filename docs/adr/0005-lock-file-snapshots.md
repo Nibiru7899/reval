@@ -14,8 +14,13 @@ sorted keys, no timestamps, 2-space indent, LF line endings. Users commit it, th
 
 - `reval diff A B` reads `reval.lock.json` at each revision via `git show REV:reval.lock.json`. No checkout or worktree is needed.
 - `reval diff` with one revision compares that revision's lock against the working tree (computed live).
-- `reval status` warns (exit code 3 with `--strict`) if the working tree differs from the committed lock.
-- The snapshot id is the SHA-256 of the canonical JSON of the snapshot without its `id` field.
+- `reval status` prints a warning (it doesn't change the exit code) if the working tree differs from the committed lock. `reval snapshot --check` is the CI gate.
+- The snapshot id is `content_id(snapshot, exclude={"id", "git_rev"})`: the SHA-256 of the canonical JSON of the snapshot without its `id` and `git_rev` fields.
+  This is the only definition (`docs/10-interfaces.md` §2). The same state committed at two revisions has the same id.
+- The lock is written with `git_rev: null`. The commit sha isn't known when the lock is written. `snapshot_at_rev` fills `git_rev` in memory after reading.
+- `read_lock` recomputes the id and raises `StoreError` if it doesn't match the stored `id` (a hand-edited or corrupted lock). A revision without a lock raises `LockNotFoundError`.
+
+*Amended 2026-10-26 (audit decision D1).*
 
 ## Consequences
 - Fast diffs between any two commits, and the benchmark can build scenarios as plain commits.

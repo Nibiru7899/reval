@@ -47,8 +47,8 @@ each claim is still **Supported**, **Stale**, **Inconclusive**, or **Violated**,
 | # | Criterion | Measured by |
 |---|---|---|
 | S1 | The motor reference project runs end to end from a clean clone in < 30 min (excluding dataset download) | Scripted reproduction, CI |
-| S2 | ReVal detects affected claims with recall ≥ 0.98 on ReValBench (missing an affected claim is the dangerous error) | Benchmark |
-| S3 | Unsupported-accept rate is non-inferior to "rerun everything" | Benchmark, paired statistics |
+| S2 | ReVal detects affected claims with recall ≥ 0.98 on Tier A, and on Tier B excluding T9 (undeclared drift, reported separately as a limitation). Missing an affected claim is the dangerous error. | Benchmark |
+| S3 | Unsupported-accept rate (UAR_truth) is non-inferior to "rerun everything", **and** decision coverage stays within 2 pp of it | Benchmark, paired statistics |
 | S4 | Revalidation cost is substantially lower than "rerun everything" and lower than file-level dependency tracking | Benchmark |
 | S5 | Every assessment is bit-for-bit reproducible from its stored snapshot | Hash check over all benchmark runs |
 | S6 | A non-author can install the library and add ReVal to a small project in under one hour | Docs + 3–5 person usability check |
@@ -80,8 +80,8 @@ The original idea is good. This plan keeps its core and changes the following:
    a file-dependency tracker. With it comes a safety risk, which the benchmark measures.
 6. **The planner is an ILP over policy alternatives**, not plain set cover. One bench run can discharge obligations for
    several claims, and a claim can be restored by different evidence combinations.
-7. **Two-tier evaluation.** Tier A uses only real data (held-out profiles). Tier B uses a "virtual world" thermal model
-   with injected physical changes (for example, a cooling change), which gives controllable ground truth. The two tiers
+7. **Two-tier evaluation.** Tier A *truth* is real measured data only (held-out test profiles). Tier B uses a "virtual world"
+   thermal model with injected physical changes (for example, a cooling change), which gives controllable ground truth. The two tiers
    are reported separately and are never mixed.
 8. **CLI- and library-first, git-native.** Snapshots map to git commits. The web UI is a view over the same engine.
    This is what makes the tool useful to people outside the capstone.

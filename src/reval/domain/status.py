@@ -1,10 +1,13 @@
-"""Status vocabulary. Mirrors docs/03-domain-model.md sections 2-4; change both together."""
+"""Status vocabulary.
+
+Meaning: docs/03-domain-model.md §2-§6; shapes: docs/10-interfaces.md §2. Change all three together.
+"""
 
 from enum import StrEnum
 
 
 class Verdict(StrEnum):
-    """Three-valued outcome of one fresh evidence item against one requirement."""
+    """Three-valued outcome of one evidence item against one requirement."""
 
     PASS = "pass"
     FAIL = "fail"
@@ -12,7 +15,11 @@ class Verdict(StrEnum):
 
 
 class Status(StrEnum):
-    """Claim status. Evaluation order (first match wins) is the declaration order below."""
+    """Claim status.
+
+    Declaration order is NOT the evaluation order; the rules (VIOLATED → WAIVED → STALE (lost fail)
+    → SUPPORTED → STALE → INCONCLUSIVE) are in docs/03-domain-model.md §3.
+    """
 
     VIOLATED = "violated"
     WAIVED = "waived"
@@ -21,7 +28,7 @@ class Status(StrEnum):
     INCONCLUSIVE = "inconclusive"
 
 
-# Only these count as "accepted" in benchmark metrics (UAR).
+# Only these count as "accepted" (UAR in benchmark metrics; benchmarks contain no waivers).
 ACCEPTED_STATUSES: frozenset[Status] = frozenset({Status.SUPPORTED, Status.WAIVED})
 
 
@@ -35,6 +42,10 @@ class FreshnessClass(StrEnum):
 
 
 class ReasonCode(StrEnum):
+    """Machine-readable reasons; table with meanings in docs/03-domain-model.md §6."""
+
+    POLICY_SATISFIED = "policy_satisfied"
+    WAIVER_APPLIED = "waiver_applied"
     CONFLICTING_EVIDENCE = "conflicting_evidence"
     NO_EVIDENCE = "no_evidence"
     OUT_OF_DOMAIN = "out_of_domain"

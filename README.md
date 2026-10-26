@@ -33,6 +33,8 @@ All judgments are deterministic and reproducible. ReVal reports the state of the
 | [07 Roadmap](docs/07-roadmap.md) | 30-week plan, milestones, cut lines, 16-week variant |
 | [08 Risks](docs/08-risks.md) | Risk register |
 | [09 CLI, API & UI](docs/09-api-and-ui.md) | Interfaces and report format |
+| [10 Interfaces](docs/10-interfaces.md) | Binding module signatures and algorithms for implementers |
+| [Tasks](docs/tasks/BACKLOG.md) | Task backlog with per-task specs |
 | [ADRs](docs/adr/) | Architecture decision records |
 | [AGENTS.md](AGENTS.md) | Rules for contributors and AI coding agents |
 
@@ -49,8 +51,10 @@ Without uv: `python -m venv .venv`, activate it, then `pip install -e ".[dev]"`.
 ## Data and acknowledgements
 
 The reference domain uses the *Electric Motor Temperature* dataset by the Department of Power Electronics and Electrical Drives (LEA),
-Paderborn University (Kaggle: `wkirgsn/electric-motor-temperature`), and builds on the thermal-modeling work of W. Kirchgässner,
-O. Wallscheid and J. Böcker. The data is not redistributed here. It is downloaded by script under its own license.
+Paderborn University (Kaggle: `wkirgsn/electric-motor-temperature`, CC BY-SA 4.0), and builds on the thermal-modeling work of
+W. Kirchgässner, O. Wallscheid and J. Böcker. Please cite their paper *Estimating Electric Motor Temperatures with Deep Residual Machine
+Learning* (IEEE Trans. Power Electronics, 2021), as the dataset page requests. The data is not redistributed here. It is downloaded by
+script, and ReValBench publishes generators rather than derived data.
 
 ## License
 
