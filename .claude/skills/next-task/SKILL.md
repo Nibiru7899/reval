@@ -57,5 +57,12 @@ Invoke the `reval-reviewer` subagent on the diff (`git diff main...HEAD`). Pass 
 
    <what and why, any deviations from spec>
    ```
-3. **Never `git push`. Never merge into `main`.** The user fast-forward-merges each finished branch before the next task starts (BACKLOG.md, decision D26).
-4. Report in ≤ 5 lines: the task, files changed, check results, reviewer outcome, the next ready task.
+3. Merge locally so the next task builds on this one (the user approved this on 2026-10-26, decision D26). Only do it when every check in step 5 passes **and** the reviewer has no open blocker or major finding:
+   ```bash
+   git switch main
+   git merge --ff-only <your-branch>
+   ```
+   If `--ff-only` fails, stop and report. Never rebase, force, or create a merge commit.
+   Owner `sonnet+human-review` tasks are merged too (status stays `review` for the user to check later).
+4. **Never `git push`.**
+5. Report in ≤ 5 lines: the task, files changed, check results, reviewer outcome, the next ready task.

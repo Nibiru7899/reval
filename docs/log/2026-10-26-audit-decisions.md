@@ -32,7 +32,7 @@ Where a doc disagrees with this record, this record wins until the doc is fixed.
 | D23 | ChangeKind = the list in 10 §2 (add/remove of a claim is `CLAIM_CHANGED`). `Change` gains `detail: str \| None`. ReasonCode gains `POLICY_SATISFIED` and `WAIVER_APPLIED`. 03 gets full ReasonCode and ChangeKind tables. |
 | D24 | One test fixture project, `tests/fixtures/mini_project` (there is no `toy_project`), extended with a shaft params field + claim, two subjects, ML, physics, measurement, and analytic producers, and `available_for`. Its producers module is created in P2-06. |
 | D25 | All tests live under `tests/` (`tests/bench/`, `tests/unit/motor/`). pytest uses `--import-mode=importlib` with pythonpath `src`, `.`, and `examples/motor_thermal`. |
-| D26 | Agent workflow: **open, waiting for the user.** Auto-merging task branches into `main` was blocked as self-modification. Until the user decides, the user merges each finished branch (`git merge --ff-only`) before the next task starts. Never push. A dependency counts as satisfied when it is `review` or `done`. The skill picks owners `sonnet` and `sonnet+human-review`. Checks run as `.venv/Scripts/python -m …`. |
+| D26 | Agent workflow (**decided by the user, 2026-10-26**): after the checks pass and the reviewer has no open blocker or major finding, the agent runs `git switch main && git merge --ff-only <branch>` locally. It never pushes, rebases, or forces. A dependency counts as satisfied when it is `review` or `done`. The skill picks owners `sonnet` and `sonnet+human-review`. Checks run as `.venv/Scripts/python -m …`. |
 | D27 | The API is single-project: `p = "default"`, root from `REVAL_PROJECT_ROOT`. |
 
 ## Research and evaluation (docs/00, 01, 05–09, research/*)

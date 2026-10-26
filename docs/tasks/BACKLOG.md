@@ -9,8 +9,10 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 2. Set it to `in-progress` (one task in progress at a time per agent).
 3. Read the task's "Read first" docs plus the `docs/10-interfaces.md` sections it names. Implement exactly the spec, then run its acceptance commands and the standard checks in `AGENTS.md`.
 4. Set it to `review` (owner `sonnet+human-review`, or any task with a `NEEDS HUMAN` item) or `done`. Commit using Conventional Commits with the task ID, e.g. `feat(core): P4-06 CP-SAT min-cost planner`.
-5. **Merging (until decision D26 is made):** the agent never merges or pushes. The **student** fast-forward-merges each finished branch into `main`
-   (`git switch main && git merge --ff-only <branch>`) before the next task starts, so every task builds on the previous one.
+5. **Merging (decision D26):** once every check passes and the reviewer has no open blocker or major finding, the agent fast-forward-merges
+   its own branch into `main` locally (`git switch main && git merge --ff-only <branch>`), so the next task builds on it. If `--ff-only`
+   fails it stops and reports. Agents never rebase, force, create merge commits, or `git push`. `sonnet+human-review` tasks are merged
+   with status `review`, and the user checks them later.
 6. If the spec is ambiguous or conflicts with `docs/03` / `docs/04` / `docs/10`, set the task to `blocked`, add a `Q-NNN` entry to `docs/log/questions.md` (keep its template), and stop. Don't guess at engineering semantics.
 
 **Status values:** `todo` · `in-progress` · `review` · `done` · `blocked`
