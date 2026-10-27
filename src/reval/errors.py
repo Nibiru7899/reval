@@ -1,12 +1,27 @@
 """Error hierarchy (docs/10 §13). The CLI maps every RevalError to exit code 3; anything else is a bug."""
 
+from os import PathLike
+
 
 class RevalError(Exception):
     """Base class for expected, user-facing ReVal errors."""
 
 
 class ManifestError(RevalError):
-    """Invalid reval.yaml content (path, message, location)."""
+    """Invalid reval.yaml content: message plus optional file ``path`` and ``location``."""
+
+    def __init__(
+        self, message: str, *, path: "str | PathLike[str] | None" = None, location: str | None = None
+    ) -> None:
+        self.message = message
+        self.path = None if path is None else str(path)
+        self.location = location
+        prefix = ""
+        if self.path:
+            prefix += f"{self.path}: "
+        if location:
+            prefix += f"{location}: "
+        super().__init__(prefix + message)
 
 
 class UndeclaredDependencyError(RevalError):
