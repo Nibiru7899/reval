@@ -1,7 +1,7 @@
 # 07 — Roadmap
 
-**Assumptions:** one student, ~15–20 h/week, a two-semester capstone (~30 weeks). A one-semester (16-week) cut is given at the end.
-Weeks are relative. Map them onto your institution's calendar and its proposal, interim, and final deadlines.
+**Assumptions:** a personal, self-paced project. One person, ~15–20 h/week, ~30 weeks. A short (16-week) variant is given at the end.
+Weeks are relative. There are no external deadlines; the milestones and their DoDs are the checkpoints.
 Task-level specs are in `docs/tasks/` (index: `docs/tasks/BACKLOG.md`). Where this roadmap and a task file disagree on detail, the task file wins.
 
 Each milestone has a **Definition of Done (DoD)**. A milestone isn't done until its DoD holds *and* CI is green.
@@ -10,10 +10,10 @@ Each milestone has a **Definition of Done (DoD)**. A milestone isn't done until 
 
 | Week | Work |
 |---|---|
-| 1 | Prior-art review (protocol in [01](01-problem-and-prior-art.md) §4). Check the dataset license on Kaggle (CC BY-SA 4.0). Get a Kaggle token and download the dataset. |
-| 2 | Write a 2–3 page proposal from `docs/00` and `docs/01`. Supervisor meeting: confirm scope and the kill criterion. Declared limits are chosen later (week 4, after EDA and splits). |
+| 1 | Prior-art review (protocol in [01](01-problem-and-prior-art.md) §4). Check the dataset license on Kaggle (CC BY-SA 4.0). The dataset is already downloaded (no token needed; P0-03 done). |
+| 2 | Write a 1-page scope note (P0-07): the kill-criterion outcome and the 30- or 16-week variant. Declared limits are chosen later (week 4, after EDA and splits). |
 
-**M0 DoD:** `related-work.csv` has ≥ 25 rows. The proposal is approved (P0-07 depends only on the prior-art review, P0-04). The raw dataset is downloaded. The repo scaffold passes CI.
+**M0 DoD:** `related-work.csv` has ≥ 25 rows. The scope note is written and signed off by you against its checklist (P0-07 depends only on the prior-art review, P0-04). The raw dataset is downloaded. The repo scaffold passes CI.
 (The splits, `splits.yaml`, the EDA notebook and the declared limits, `params/limits.yaml`, come in weeks 3–4, tasks P1-02, P0-05 and P0-06.)
 
 ## Phase 1 — Motor domain (weeks 3–6)
@@ -47,9 +47,9 @@ the Phase 3 diff and land there). Coverage on `core` ≥ 90 %, enforced with `--
 | 11 | Diff → `ChangeSet`. Git lock reader (`reval.lock.json`, ADR 0005). `reval diff REV_A REV_B`. |
 | 12 | Freshness classes: exact, out-of-scope, invalidated. Fail-closed handling of `Unknown`. |
 | 13 | Tolerance carry-forward. LPTN sensitivity estimation script → `Tolerance` records with `source`. I3, I5, and I7 property tests. |
-| 14 | **Interim demo + report.** Show a coolant change making the right claims stale and leaving the shaft claim alone. |
+| 14 | **M3 demo + short write-up** (in `docs/log/`). Show a coolant change making the right claims stale and leaving the shaft claim alone. |
 
-**M3 DoD:** a scripted demo runs in one command (`examples/motor_thermal/demo_change.ps1` / `.sh`). The interim report is submitted.
+**M3 DoD:** a scripted demo runs in one command (`examples/motor_thermal/demo_change.ps1` / `.sh`). A short write-up of what the demo shows is in `docs/log/`.
 
 ## Phase 4 — Validity + planner (weeks 15–18)
 
@@ -93,14 +93,16 @@ If M5 isn't met by week 23, the default UI scope is the **static HTML report** (
 
 | Week | Work |
 |---|---|
-| 28 | Paper draft ([research/paper-outline.md](research/paper-outline.md)). Final-report chapters reuse the paper sections. Docs site (MkDocs Material): quickstart, concepts, motor tutorial, "add ReVal to your project" (`reval init`). |
-| 29 | `pip install` from a wheel. Poster, 5-minute demo video, defense slides. Tag `v1.0.0`. arXiv preprint (with supervisor approval). |
-| 30 | Defense. |
+| 28 | Paper draft ([research/paper-outline.md](research/paper-outline.md)). The README and docs site reuse the paper sections. Docs site (MkDocs Material): quickstart, concepts, motor tutorial, "add ReVal to your project" (`reval init`). |
+| 29 | `pip install` from a wheel. 5-minute demo video. Tag `v1.0.0`. Optional: arXiv preprint or workshop submission, blog post / talk slides. |
+| 30 | Buffer. Public release announcement. |
 
 ## Weekly rhythm
 
 - **Monday:** pick the week's issues from the milestone. **Friday:** a 5-line log in `docs/log/YYYY-Www.md` (done / blocked / next / numbers / risks).
-- Meet the supervisor every 2 weeks with a demo of something that runs, not just slides.
+- **Every 2 weeks: self-review.** Demo something that runs (not slides) to yourself or anyone willing, update `docs/08-risks.md`, and
+  apply cut lines early if behind.
+- **Optional external feedback:** share the preprint, a demo video, or the repo with a practitioner or researcher, and log what they said.
 - Every result number in a report is produced by a committed script. No hand-copied numbers.
 
 ## Cut lines (what to drop, in order, if behind schedule)
@@ -114,7 +116,7 @@ If M5 isn't met by week 23, the default UI scope is the **static HTML report** (
 
 **Never cut:** the deterministic core, fail-closed semantics, Tier A benchmark, baselines B0/B1/B2, pre-registration, reproducibility.
 
-## One-semester (16-week) variant
+## Short (16-week) variant
 
 | Weeks | Scope |
 |---|---|
@@ -124,6 +126,6 @@ If M5 isn't met by week 23, the default UI scope is the **static HTML report** (
 | 9–10 | Phase 3 without tolerance carry-forward (exact and out-of-scope freshness only) |
 | 11–12 | Phase 4 with the CP-SAT min-cost planner only |
 | 13–14 | Tier A benchmark, B0–B2, ablations A1/A3/A6 |
-| 15–16 | Static HTML report, final report, demo |
+| 15–16 | Static HTML report, write-up, demo |
 
 In this variant, tolerance carry-forward becomes "future work". The research question narrows to field- and scope-level invalidation.

@@ -1,6 +1,6 @@
 # 08 — Risk register
 
-Scores: likelihood (L) and impact (I) on a 1–3 scale. Review at every supervisor meeting.
+Scores: likelihood (L) and impact (I) on a 1–3 scale. Review at every fortnightly self-review.
 
 | # | Risk | L | I | Mitigation | Trigger → fallback |
 |---|---|---|---|---|---|
@@ -14,5 +14,5 @@ Scores: likelihood (L) and impact (I) on a 1–3 scale. Review at every supervis
 | R8 | Benchmark runtime too long (B0 reruns LPTN identification and ML training per scenario) | 3 | 2 | Producer cache keyed by (producer code hash, input hash). LPTN identification and ML training shared across scenarios with identical inputs. Parallel runner. The week-21 pilot measures wall-clock per scenario and sets instance counts before pre-registration. | Reduce instances per type to 15. Keep ≥ 30 base snapshots. |
 | R9 | Dataset license or access problem | 1 | 3 | License is CC BY-SA 4.0 (Kaggle v3). Never redistribute data or derived data. ReValBench publishes generators only. | Use the Paderborn LEA / `upb-lea` GitHub links, or contact the authors. Synthetic-only fallback as a last resort (weakens the project). |
 | R10 | Time lost to Windows/tooling issues | 2 | 1 | `uv`, pinned versions, CI on Linux + Windows | Use WSL2 for heavy jobs |
-| R11 | Over-claiming in the report ("ReVal proves safety") | 2 | 3 | Disclaimers in every report. AGENTS.md rule. Supervisor review of wording. | — |
+| R11 | Over-claiming in the report ("ReVal proves safety") | 2 | 3 | Disclaimers in every report. AGENTS.md rule. Re-read every public text against rule 9 before publishing; ask an outside reader if possible. | — |
 | R12 | Solo-developer bus factor / burnout | 2 | 3 | Weekly logs, small milestones, real buffer weeks 18 and 24, Phase 6 gated on M5 | Apply cut lines early, not late |

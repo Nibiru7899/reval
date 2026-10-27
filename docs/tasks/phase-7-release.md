@@ -10,7 +10,7 @@ Conventions: see the header of `phase-0-foundations.md`.
 - **Files:** `paper/` (LaTeX, with an IEEE or ACM template for the target venue), `paper/figures/` (copied by script from `bench/results/<hash>/figures`), `paper/check_numbers.py`
 - **Spec:** follow `paper-outline.md`. Every number is pulled in via `\input` from the generated `bench/results/<hash>/tables/*.tex`. Related work cites only references marked
   `verified=yes` in `docs/research/related-work.csv`.
-- **Acceptance:** `latexmk` builds, and `.venv/Scripts/python paper/check_numbers.py` confirms that every table file matches the archived results hash. NEEDS HUMAN: supervisor review.
+- **Acceptance:** `latexmk` builds, and `.venv/Scripts/python paper/check_numbers.py` confirms that every table file matches the archived results hash. NEEDS HUMAN: you re-read it against AGENTS.md rule 9 (honest language); optionally ask an outside reader.
 
 ## P7-02 — Documentation site
 - **Owner:** sonnet · **Depends on:** P4-15 · **Read first:** `docs/03`, `docs/09`
@@ -53,17 +53,18 @@ Conventions: see the header of `phase-0-foundations.md`.
   The script prints the result hashes and compares them with the archived ones.
 - **Acceptance:** NEEDS HUMAN: measure S1 (< 30 min without the full bench) and record it in `REPRODUCE.md`. Runnable check: `bash -n scripts/reproduce_all.sh` succeeds, and the PowerShell parser accepts the `.ps1`.
 
-## P7-06 — Poster, demo video, defense slides
+## P7-06 — Demo video and talk slides (optional)
 - **Owner:** human · **Depends on:** P7-01 · **Read first:** `docs/00`
-- **Spec:** a 5-minute demo video of the coolant-change story (diff → stale claims → plan → run → report), a defense deck, and a poster that reuses the paper figures.
-- **Acceptance:** NEEDS HUMAN: supervisor sign-off.
+- **Spec:** a 5-minute demo video of the coolant-change story (diff → stale claims → plan → run → report). Optional: short talk slides or a blog post that reuse the paper figures.
+- **Acceptance:** NEEDS HUMAN: the video is linked from the README.
 
 ## P7-07 — Release v1.0.0
 - **Owner:** sonnet+human-review · **Depends on:** P7-04, P7-05 · **Read first:** `README.md` (license)
-- **Files:** `CHANGELOG.md` (Keep a Changelog), `CITATION.cff`, `LICENSE` (the student chooses it per the institution's IP policy), `pyproject.toml` (version)
+- **Files:** `CHANGELOG.md` (Keep a Changelog), `CITATION.cff`, `LICENSE` (the owner's choice; Apache-2.0 recommended for the code), `pyproject.toml` (version)
 - **Spec:** bump the version, tag `v1.0.0`, and create a GitHub release with the wheel, the results archive hash, and the citation.
 - **Acceptance:** `git tag --list v1.0.0` prints the tag, and `pip install` from the release wheel works in a fresh venv. NEEDS HUMAN: the license choice and the push of the tag.
 
-## P7-08 — arXiv preprint / submission
+## P7-08 — arXiv preprint / workshop submission (optional)
 - **Owner:** human · **Depends on:** P7-01 · **Read first:** the venue's rules
-- **Spec:** with supervisor approval only. Check the venue's dual-submission rules first.
+- **Spec:** optional. As an independent researcher you may need an arXiv endorsement for your first submission; ask an author in the area.
+  Check the venue's dual-submission rules first.

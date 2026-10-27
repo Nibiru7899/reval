@@ -2,7 +2,7 @@
 
 **Working title:** *Which Conclusions Survive a Change? Change-Aware, Tolerance-Aware Revalidation of Engineering Decisions*
 
-**Candidate venues (check deadlines and fit with your supervisor):** ASME VVUQ Symposium, the MODELS conference or its workshops
+**Candidate venues (optional; check deadlines and fit yourself):** ASME VVUQ Symposium, the MODELS conference or its workshops
 (model-driven engineering, traceability), SE-for-CPS workshops at ICSE/ASE, an arXiv preprint first.
 
 1. **Introduction:** the stale-evidence problem. A motor example. Contributions (C1–C4 from `docs/01` §3).

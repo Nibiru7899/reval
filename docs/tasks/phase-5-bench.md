@@ -181,7 +181,8 @@ Conventions: see the header of `phase-0-foundations.md`.
 - **Files:** `docs/research/preregistration.md`
 - **Spec:** fill in every field from the pilot proposal: H1 (four parts), H2, H3, δ, ε, scenario counts, number of base snapshots, final-run seeds (fresh), declared limits, α, κ, AD thresholds,
   costs, and exclusion rules. Commit with the message `docs(research): pre-registration` at the **end of week 21**. **No final run (P5-16) may start before this commit exists.**
-- **Acceptance:** `git log --grep "docs(research): pre-registration"` finds the commit. NEEDS HUMAN: the supervisor has seen it.
+- **Acceptance:** `git log --grep "docs(research): pre-registration"` finds the commit, and the tag `prereg-v1` points at it
+  (`git tag --list prereg-v1`). NEEDS HUMAN: you publish it before P5-16 (push the tag to the public repo, optionally also to OSF).
 
 ## P5-15 — Figures and tables (scripted)
 - **Owner:** sonnet · **Depends on:** P5-12, P5-13, P5-19, P5-14, P5-20 · **Read first:** `docs/06` §3, §6, `dataviz` skill

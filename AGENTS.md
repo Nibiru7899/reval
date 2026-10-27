@@ -10,7 +10,7 @@ parameters, assumptions, requirements, code), it determines which engineering **
 which are stale, inconclusive, or violated, and the minimum-cost set of tests that restores support.
 
 Reference domain: thermal validation of a permanent-magnet synchronous motor (Paderborn *Electric Motor Temperature* dataset).
-This is a capstone project with a research component, so correctness, reproducibility, and honest reporting matter more than features.
+This is a personal research project (no institution or supervisor), so correctness, reproducibility, and honest reporting matter more than features.
 
 Read these before non-trivial work:
 - `docs/00-vision.md`: scope and non-goals
@@ -72,7 +72,7 @@ Before declaring a task done, run: `ruff check`, `ruff format --check`, `mypy sr
 7. **Units are explicit.** Every quantity carries a unit at the manifest/SDK boundary (`pint`). Temperatures are stored in °C as
    absolute values. Temperature *differences* (margins, tolerances, intervals) are in K. Don't mix them.
 8. **No raw data or large binaries in git.** `data/`, `models/`, `.reval/`, and benchmark outputs are git-ignored. Data is fetched by scripts.
-   Never commit or log credentials (for example, a Kaggle API token).
+   Never commit or log credentials of any kind. (The motor dataset needs none: it downloads from a public URL.)
 9. **Honest language.** Code, docs, UI copy, and reports must never say a design is "safe", "certified", or "verified to standard X".
    Use "supported by recorded evidence against the declared requirement". Every report includes the disclaimer.
 10. **Every reported number comes from a committed script.** No hand-edited result tables.

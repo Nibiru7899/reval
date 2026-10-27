@@ -30,7 +30,7 @@ each claim is still **Supported**, **Stale**, **Inconclusive**, or **Violated**,
 - **Not a chatbot.** All validity judgments are deterministic, reproducible computations. An LLM may later
   *explain* a report or *draft* claim metadata for human review; it never decides a status.
 - **Not a CAD/PDF understander.** Engineering metadata is declared explicitly (a manifest + Python
-  decorators). Automatic extraction is out of scope for the capstone.
+  decorators). Automatic extraction is out of scope for this project.
 - **Not a generic digital twin or a SPDM platform.** It is a narrow, sharp layer that sits on top of an
   engineer's existing Python project and git history.
 
@@ -42,7 +42,7 @@ each claim is still **Supported**, **Stale**, **Inconclusive**, or **Violated**,
 4. **Web workspace** — FastAPI + React UI: claim board, change timeline, justification graph, envelope plots, planner with budget slider, exportable reports.
 5. **CI integration** — a GitHub Action that comments on a PR: "this change makes 3 claims stale; cheapest plan: 2 tests, cost 14".
 
-## Success criteria for the capstone
+## Success criteria for the project
 
 | # | Criterion | Measured by |
 |---|---|---|
@@ -51,9 +51,9 @@ each claim is still **Supported**, **Stale**, **Inconclusive**, or **Violated**,
 | S3 | Unsupported-accept rate (UAR_truth) is non-inferior to "rerun everything", **and** decision coverage stays within 2 pp of it | Benchmark, paired statistics |
 | S4 | Revalidation cost is substantially lower than "rerun everything" and lower than file-level dependency tracking | Benchmark |
 | S5 | Every assessment is bit-for-bit reproducible from its stored snapshot | Hash check over all benchmark runs |
-| S6 | A non-author can install the library and add ReVal to a small project in under one hour | Docs + 3–5 person usability check |
+| S6 | A non-author can install the library and add ReVal to a small project in under one hour | Docs + a timed dry run by 1–5 people who didn't write the code |
 
-Targets in S2–S4 are hypotheses. If the benchmark refutes them, an honest negative result, properly analyzed, is still a valid capstone outcome.
+Targets in S2–S4 are hypotheses. If the benchmark refutes them, an honest negative result, properly analyzed, is still a valid and publishable outcome.
 
 ## The research question
 
@@ -84,4 +84,4 @@ The original idea is good. This plan keeps its core and changes the following:
    thermal model with injected physical changes (for example, a cooling change), which gives controllable ground truth. The two tiers
    are reported separately and are never mixed.
 8. **CLI- and library-first, git-native.** Snapshots map to git commits. The web UI is a view over the same engine.
-   This is what makes the tool useful to people outside the capstone.
+   This is what makes the tool useful to people beyond this project.

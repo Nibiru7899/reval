@@ -69,3 +69,16 @@ A second read-only pass found 20 more defects. Rulings:
 - H2 and H3 now have explicit test forms in docs/06 §1 and in the pre-registration.
 - Roadmap: P2-01 moves to week 3. EDA and limits move to weeks 3–4 (M1). Report work moves to week 17, which makes week 18 a real buffer. Stats, ablation and RQ4 harnesses move to week 20. The cut-line reference is now 5.
 - ADR 0005: `--strict` is removed, and `reval status` only warns.
+
+## 2026-10-27 — personal project
+
+The owner clarified that ReVal is a personal project: no institution, supervisor, semester, or defense.
+
+- "Capstone", "student", supervisor sign-offs, ethics-office approval, the IP policy and the defense are removed. Sign-offs are the owner's, against written checklists.
+- P0-07 is now "Scope checkpoint", a 1-page scope note. Supervisor meetings are replaced by a fortnightly self-review plus optional external feedback.
+- The roadmap is self-paced (~30 weeks), with a 16-week "short variant".
+- The dataset needs **no token**: the public Kaggle endpoint redirects to the archive. P0-03 is done, with the data downloaded and verified (69 profiles, 1,330,816 rows).
+  P1-01's `download_data.py` uses `urllib` with that URL and checks the archive size. No Kaggle CLI, no credentials.
+- The pre-registration is published as a public tag (`prereg-v1`, optionally OSF) before the final run.
+- The paper, preprint, demo video and talk slides are optional. The license is the owner's choice (Apache-2.0 recommended for code; the data stays CC BY-SA 4.0).
+- The usability study stays optional, with informed consent and anonymity.

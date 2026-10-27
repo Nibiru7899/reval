@@ -5,7 +5,7 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 
 ## How to pick the next task
 1. Take the **lowest ID** (phase, then number) whose status is `todo`, whose owner is `sonnet` or `sonnet+human-review`, and whose dependencies are all
-   `done` **or** `review`. Agents never pick `human` tasks (those are for the student).
+   `done` **or** `review`. Agents never pick `human` tasks (those are for the owner).
 2. Set it to `in-progress` (one task in progress at a time per agent).
 3. Read the task's "Read first" docs plus the `docs/10-interfaces.md` sections it names. Implement exactly the spec, then run its acceptance commands and the standard checks in `AGENTS.md`.
 4. Set it to `review` (owner `sonnet+human-review`, or any task with a `NEEDS HUMAN` item) or `done`. Commit using Conventional Commits with the task ID, e.g. `feat(core): P4-06 CP-SAT min-cost planner`.
@@ -17,7 +17,7 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 
 **Status values:** `todo` · `in-progress` · `review` · `done` · `blocked`
 
-**Owners:** `sonnet` (a coding agent does it alone) · `sonnet+human-review` (the agent implements, the student checks the result) · `human` (the student: decisions, supervisor contact, data access, studies, writing).
+**Owners:** `sonnet` (a coding agent does it alone) · `sonnet+human-review` (the agent implements, the owner checks the result) · `human` (the owner: decisions, sign-offs, studies, writing).
 
 **Phase refinement:** at the start of each phase, run one Opus pass (`/phase-refine`) to update that phase's specs with what earlier phases actually built.
 
@@ -30,11 +30,11 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 |---|---|---|---|---|
 | P0-01 | Tooling remainder: data-marker skip hook | sonnet | — | todo |
 | P0-02 | Repo hygiene: PR and issue templates | sonnet | — | todo |
-| P0-03 | Dataset access (Kaggle token) and raw download | human | — | todo |
+| P0-03 | Dataset license check and download (no token) | human | — | done |
 | P0-04 | Prior-art review | human | — | todo |
 | P0-05 | EDA functions and notebook | sonnet+human-review | P1-01 | todo |
 | P0-06 | Choose declared limits | human | P0-05, P1-02 | todo |
-| P0-07 | Proposal and supervisor checkpoint | human | P0-04 | todo |
+| P0-07 | Scope checkpoint | human | P0-04 | todo |
 
 ## Phase 1 — Motor domain ([phase-1-motor.md](phase-1-motor.md))
 
@@ -167,9 +167,9 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | P7-03 | Tutorial: add ReVal to a new project | sonnet+human-review | P7-02, P4-16 | todo |
 | P7-04 | Packaging + install test | sonnet | P7-02 | todo |
 | P7-05 | End-to-end reproduction script | sonnet | P5-16 | todo |
-| P7-06 | Poster, demo video, defense slides | human | P7-01 | todo |
+| P7-06 | Demo video and talk slides (optional) | human | P7-01 | todo |
 | P7-07 | Release v1.0.0 | sonnet+human-review | P7-04, P7-05 | todo |
-| P7-08 | arXiv preprint / submission | human | P7-01 | todo |
+| P7-08 | arXiv preprint / workshop submission (optional) | human | P7-01 | todo |
 
 ## Checking this file
 

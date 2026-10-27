@@ -7,8 +7,10 @@
 - **Version:** Kaggle dataset version 3 (updated 2021-04-26). The 2021 update added 17 profiles (138 h → 185 h) and de-anonymized the data.
   Measurement sessions are 1–6 h long.
 - **Expected columns** (assert in the loader; fail loudly on mismatch): `u_q, u_d, i_q, i_d, motor_speed, torque, coolant, ambient,
-  stator_winding, stator_tooth, stator_yoke, pm, profile_id`. The expected file name (`measures_v2.csv`) and profile count (~69) are
-  unverified; assert both during EDA and record the observed values.
+  stator_winding, stator_tooth, stator_yoke, pm, profile_id`.
+- **Verified on 2026-10-27** (downloaded copy): the archive is `archive.zip` (122,212,134 bytes) containing one file, `measures_v2.csv`
+  (300,061,411 bytes). It has exactly the 13 columns above, 1,330,816 rows (184.8 h at 2 Hz), and **69 profiles** (ids 2–81, with gaps).
+- **Access (no account or token):** the public endpoint `https://www.kaggle.com/api/v1/datasets/download/wkirgsn/electric-motor-temperature` redirects to the archive. `scripts/download_data.py` uses it.
 - **`torque` and `motor_speed` are estimates** derived from set currents and voltages, not torque-sensor measurements. This matters for the
   drive map (§5) and for engineer-term duty cycles: a "torque" block is a torque *estimate* level.
 - **Targets:** `pm` (rotor magnet, measured by telemetry; this is the hard and valuable one) and `stator_winding`. The other stator temperatures are secondary.
@@ -16,8 +18,7 @@
   autocorrelated, so never split rows randomly.**
 - **License:** CC BY-SA 4.0 (Kaggle metadata, v3). Any redistributed derivative (processed parquet, modified profiles from T3 scenarios,
   world-model parameters fitted to the data) must be CC BY-SA 4.0 and attributed. ReValBench therefore publishes **generators, not derived data**.
-  The repo never commits raw data. `scripts/download_data.py` fetches it (the Kaggle CLI needs the user's own API token, which the user
-  sets up; ReVal never handles it).
+  The repo never commits raw data. `scripts/download_data.py` fetches it anonymously from the public URL above. No credentials are involved.
 - **Citation:** the Kaggle page asks users to cite Kirchgässner, Wallscheid, Böcker, *Estimating Electric Motor Temperatures with Deep Residual
   Machine Learning*, IEEE Trans. Power Electronics, 2021 (verify volume and pages, believed 36(7)). Also cite the dataset and the other
   Kirchgässner et al. papers ([01](01-problem-and-prior-art.md) §2.7) in every report and in the README.

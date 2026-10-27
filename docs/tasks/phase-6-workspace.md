@@ -115,5 +115,5 @@ Pin exact versions in `package.json`. Conventions: see the header of `phase-0-fo
 ## P6-15 — Usability check (RQ5, optional)
 - **Owner:** human (sonnet prepares the materials) · **Depends on:** P6-11 · **Read first:** `docs/06` §8
 - **Files:** `docs/research/usability-protocol.md`, `docs/research/usability-results.csv`, `bench/analysis/usability.py`
-- **Spec:** Sonnet drafts the protocol: 3 tasks, counterbalancing, the SUS questionnaire, consent text, and an anonymous data sheet. The student runs 5–8 sessions after any required ethics approval.
+- **Spec:** Sonnet drafts the protocol: 3 tasks, counterbalancing, the SUS questionnaire, consent text, and an anonymous data sheet. You run 5–8 sessions with written informed consent, the right to stop at any time, and no personal data stored.
 - **Acceptance:** anonymized results exist, and `python -m bench.analysis.usability` computes SUS and task accuracy from the CSV.

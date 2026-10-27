@@ -129,4 +129,4 @@ individual engineering decisions and evaluated on a benchmark. No single compone
 - For each hit, fill one row in `docs/research/related-work.csv`: citation, what it does, overlap with ReVal (none / partial / full), data used, is code available.
 - **Kill criterion:** if a published open tool already does decision-level freshness + applicability gating + cost-optimal
   restoration *with a benchmark*, pivot the contribution. Candidates: tolerance-aware invalidation alone, or the benchmark alone.
-  Discuss this with your supervisor before week 3.
+  Decide before week 3 and record the outcome in the scope note (P0-07). If you can, ask one practitioner or researcher for a second opinion.

@@ -142,5 +142,5 @@ model-form error (see §7).
 
 5–8 participants (engineering students or practitioners), 3 tasks each ("after this change, which sign-offs can you still trust,
 and what would you run?"). Conditions: git diff + logs vs. a ReVal report, counterbalanced. Measure correctness, time, and a SUS
-questionnaire. Get approval from your institution's ethics process if it requires one for human-participant studies. Keep it
-anonymous and minimal.
+questionnaire. Basic research ethics still apply without an institution: informed consent in writing, the right to stop at any time,
+no personal data stored, anonymous results. Keep it minimal.

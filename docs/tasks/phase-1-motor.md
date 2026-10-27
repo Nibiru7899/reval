@@ -22,13 +22,17 @@ P2-01, a small standalone task, so do P2-01 first.
   - `load_raw(path: Path) -> pd.DataFrame`: order-insensitive schema check. Raises `reval.errors.SchemaError` listing the missing and extra columns.
   - `validate(df: pd.DataFrame) -> None`: no NaNs, integer `profile_id`, ≥ 1 row per profile. Otherwise `SchemaError`.
   - `prepare(raw_csv: Path, out_parquet: Path) -> Path`: load → validate → add `t` (seconds, 0.5 s steps, restarting at 0 per profile) → sort by (profile_id, t) → write parquet → return `out_parquet`.
-  - `scripts/download_data.py`: if `data/raw/*.csv` exists, skip the download. Otherwise run `subprocess.run(["kaggle", "datasets", "download", "-d", "wkirgsn/electric-motor-temperature", "-p", str(raw_dir), "--unzip"], check=True)`.
-    If the `kaggle` CLI is missing, print manual-download instructions and exit 1. Glob `data/raw/*.csv` and require exactly one file. Then `prepare(...)` to `data/processed/measures.parquet`.
+  - `scripts/download_data.py` (stdlib only, **no Kaggle CLI, no credentials**): if `data/raw/measures_v2.csv` exists, skip the download.
+    Otherwise stream `https://www.kaggle.com/api/v1/datasets/download/wkirgsn/electric-motor-temperature` with `urllib.request` (it redirects to the archive) to `data/raw/archive.zip`,
+    check the size is exactly `122_212_134` bytes (else delete it and exit 1 with a clear message), extract only `measures_v2.csv`
+    with `zipfile`, then delete the zip. Require exactly one CSV in `data/raw/`. Then `prepare(...)` to `data/processed/measures.parquet`.
+    The download URL and expected size are module constants (`DATASET_URL`, `ARCHIVE_BYTES`).
   - `tests/helpers/motor_synth.py::synthetic_measures(n_profiles=3, n_rows=600, seed=0) -> pd.DataFrame` (the conftest fixture returns this function) with exactly `EXPECTED_COLUMNS`. Temperatures are smooth
     first-order responses to the current, so the models in later tasks have something to learn.
 - **Acceptance:** `.venv/Scripts/python -m pytest tests/unit/motor/test_data.py` covers: a valid synthetic frame passes; a missing column → `SchemaError`;
   NaN → `SchemaError`; `t` restarts at 0 for each profile. A `@pytest.mark.data` test checks that the real parquet has 14 columns and > 1,000,000 rows.
-- **Pitfalls:** never read, print, or log the Kaggle token.
+- **Pitfalls:** don't add any authentication; the endpoint is public. Unit tests must not hit the network (test the extract/skip logic on a
+  small zip made in `tmp_path`). The real file is already at `examples/motor_thermal/data/raw/measures_v2.csv` on the owner's machine.
 
 ## P1-02 — Profile-level splits
 - **Owner:** sonnet+human-review · **Depends on:** P1-01 · **Read first:** `docs/05` §2, `docs/10` §12 (`splits.py`), AGENTS rule 6

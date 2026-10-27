@@ -29,7 +29,7 @@ Compare field-hash maps of *S* and *S′* per artifact:
 - Anything a hasher can't classify → `UNKNOWN` (fail-closed).
 Exact rules: `10-interfaces.md` §4.2.
 
-Complexity: O(total selectors). This is trivial at capstone scale.
+Complexity: O(total selectors). This is trivial at this project's scale.
 
 ## A3. Freshness (E2 core)
 

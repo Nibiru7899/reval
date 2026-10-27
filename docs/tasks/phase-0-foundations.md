@@ -3,8 +3,8 @@
 Conventions for every task file (phases 0–7):
 - **Header line format** (parsed by the BACKLOG check script, keep it exact):
   `## <ID> — <Title>` followed by `- **Owner:** <owner> · **Depends on:** <IDs or —> · **Read first:** <docs>`.
-- **Owner:** `sonnet` = an AI coding agent does it end to end. `sonnet+human-review` = the agent implements and the student checks the
-  result (the agent marks the task `review`). `human` = only the student can do it (accounts, approvals, judgment calls). Agents never pick `human` tasks.
+- **Owner:** `sonnet` = an AI coding agent does it end to end. `sonnet+human-review` = the agent implements and the owner (you) checks the
+  result (the agent marks the task `review`). `human` = only the owner can do it (accounts, approvals, judgment calls). Agents never pick `human` tasks.
 - **Dependencies** are explicit task IDs. A dependency counts as satisfied when its status is `review` or `done`.
 - **Binding contract:** `docs/10-interfaces.md` for names, paths, and signatures. `docs/03-domain-model.md` for meaning. If a task text and `docs/10`
   disagree, `docs/10` wins. If `docs/10` and `docs/03` disagree, stop and log a question.
@@ -15,7 +15,7 @@ Conventions for every task file (phases 0–7):
   **user** fast-forward-merges each finished branch into `main` before the next task starts.
 - **Tests live under `tests/` only** (`tests/unit/…`, `tests/property/`, `tests/integration/`, `tests/golden/`, `tests/bench/`). pytest runs with
   `--import-mode=importlib` and `pythonpath = ["src", ".", "examples/motor_thermal"]`. `tests/unit/motor/` has **no** `__init__.py`.
-- **`NEEDS HUMAN`** marks an acceptance item that only the student can judge. Every such item comes with a runnable check the agent does run.
+- **`NEEDS HUMAN`** marks an acceptance item that only the owner can judge. Every such item comes with a runnable check the agent does run.
 - If the spec is ambiguous, **don't guess engineering semantics**. Append the question to `docs/log/questions.md` (keep its template), set the task to `blocked`, and stop.
 
 ---
@@ -47,19 +47,17 @@ Conventions for every task file (phases 0–7):
   Files, Spec, Acceptance, Out of scope, Pitfalls). **Do not touch `docs/log/questions.md`.** Its `Q-NNN` template is used by the skills.
 - **Acceptance:** `.venv/Scripts/python -c "import pathlib; t=pathlib.Path('.github/pull_request_template.md').read_text(); assert all(s in t for s in ['I1','AGENTS.md','Task'])"` exits 0.
 
-## P0-03 — Dataset access (Kaggle token) and raw download
+## P0-03 — Dataset license check and download (no token)
 - **Owner:** human · **Depends on:** — · **Read first:** `docs/05-motor-domain.md` §1
-- **Steps (student):**
-  1. Confirm the dataset's **license** on its page (`kaggle.com/datasets/wkirgsn/electric-motor-temperature`; the plan records CC BY-SA 4.0, v3).
-     Record the license and the date checked as a resolved entry in `docs/log/questions.md`.
-  2. Create your own Kaggle API token and put it where the Kaggle CLI expects it (`%USERPROFILE%\.kaggle\kaggle.json`). **Never commit it.
-     Never paste it into a chat or an agent prompt.**
-  3. After P1-01 exists, run `.venv/Scripts/python examples/motor_thermal/scripts/download_data.py`, or download the zip by hand into
-     `examples/motor_thermal/data/raw/`.
+- **Status: done (2026-10-27).** No account or token is needed: the public endpoint `https://www.kaggle.com/api/v1/datasets/download/wkirgsn/electric-motor-temperature` redirects to the archive.
+  `examples/motor_thermal/data/raw/measures_v2.csv` was downloaded and verified (13 columns, 1,330,816 rows, 69 profiles; see `docs/05` §1).
+- **Remaining (owner):** confirm the **license** on the dataset page (`kaggle.com/datasets/wkirgsn/electric-motor-temperature`; the plan records
+  CC BY-SA 4.0, v3) and record it with the date checked as a resolved entry in `docs/log/questions.md`. On a new machine, re-download with
+  `.venv/Scripts/python examples/motor_thermal/scripts/download_data.py` once P1-01 exists.
 - **Acceptance:** exactly one CSV exists under `examples/motor_thermal/data/raw/`, and `git status --porcelain examples/motor_thermal/data` prints nothing (git-ignored).
 
 ## P0-04 — Prior-art review
-- **Owner:** human (sonnet can assist with search and summaries; only the student marks rows verified) · **Depends on:** — · **Read first:** `docs/01-problem-and-prior-art.md` §2, §2.9, §4
+- **Owner:** human (sonnet can assist with search and summaries; only the owner marks rows verified) · **Depends on:** — · **Read first:** `docs/01-problem-and-prior-art.md` §2, §2.9, §4
 - **Files:** `docs/research/related-work.csv`, `docs/research/prior-art-summary.md` (new)
 - **Steps:** run the search strings in §4. Fill ≥ 25 rows of `related-work.csv`, with `verified=yes` only after reading the primary source.
   §2.9 already lists the outcomes for the five originally unverified items. Confirm the found ones (for example, the OpenModelica MDPI
@@ -67,7 +65,7 @@ Conventions for every task file (phases 0–7):
 - **Agent assist prompt (optional):** "Search for X. For each candidate give title, authors, year, venue, DOI/URL, and a 2-sentence summary.
   Mark anything you couldn't open as unverified." The agent must never set `verified=yes`.
 - **Acceptance:** `.venv/Scripts/python -c "import csv; r=list(csv.DictReader(open('docs/research/related-work.csv',encoding='utf-8'))); assert len(r)>=25"` exits 0.
-  NEEDS HUMAN: the supervisor reviews the summary (P0-07).
+  NEEDS HUMAN: you read the summary and apply the kill criterion in the scope note (P0-07).
 
 ## P0-05 — EDA functions and notebook
 - **Owner:** sonnet+human-review · **Depends on:** P1-01 · **Read first:** `docs/05-motor-domain.md` §1–2, §6
@@ -92,7 +90,11 @@ Conventions for every task file (phases 0–7):
 - **Acceptance:** `.venv/Scripts/python -c "import yaml; d=yaml.safe_load(open('examples/motor_thermal/params/limits.yaml')); assert {'pm_peak_limit_degC','sw_peak_limit_degC','inverter_current_limit_A','shaft_d_limit_mm'} <= set(d)"` exits 0.
   The percentile numbers and the decision are recorded in `docs/log/`.
 
-## P0-07 — Proposal and supervisor checkpoint
+## P0-07 — Scope checkpoint
 - **Owner:** human · **Depends on:** P0-04 · **Read first:** `docs/00-vision.md`, `docs/01` §1/§3, `docs/06` §1, `docs/07-roadmap.md`
-- **Deliverable:** a 2–3 page proposal. Get supervisor sign-off on the scope, the kill-criterion outcome, and the 30- or 16-week variant.
+- **Deliverable:** a 1-page scope note, `docs/log/<date>-scope.md`, signed off by you against this checklist:
+  - [ ] Kill-criterion outcome (continue / pivot to which contribution), with the closest prior work named.
+  - [ ] Variant chosen: 30-week or 16-week (short).
+  - [ ] Stretch goals in or out (TNN, sequential planner, second domain, usability study).
+  - [ ] Hours per week you can actually sustain, and the cut line you will apply first if behind.
 - **Acceptance:** the decision (variant chosen, any scope changes) is recorded in `docs/log/`. `docs/07-roadmap.md` is updated if the variant changes.

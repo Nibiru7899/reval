@@ -17,7 +17,7 @@ each claim as one of:
 ReVal then computes a **minimum-cost revalidation plan** (an ILP solved with OR-Tools) that reuses evidence still valid.
 All judgments are deterministic and reproducible. ReVal reports the state of the evidence. It does **not** certify safety.
 
-**Project status:** planning / Phase 0 (capstone project). See the [roadmap](docs/07-roadmap.md).
+**Project status:** planning / Phase 0 (personal research project). See the [roadmap](docs/07-roadmap.md).
 
 ## Documentation
 
@@ -58,4 +58,5 @@ script, and ReValBench publishes generators rather than derived data.
 
 ## License
 
-To be decided. Check your institution's capstone IP policy first. Apache-2.0 is recommended for an open engineering tool.
+The owner's choice, made at release (P7-07). Apache-2.0 is recommended for the code. The dataset stays under its own license
+(CC BY-SA 4.0) and is never redistributed here.
