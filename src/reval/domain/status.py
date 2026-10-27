@@ -46,6 +46,7 @@ class ReasonCode(StrEnum):
 
     POLICY_SATISFIED = "policy_satisfied"
     WAIVER_APPLIED = "waiver_applied"
+    REQUIREMENT_VIOLATED = "requirement_violated"
     CONFLICTING_EVIDENCE = "conflicting_evidence"
     NO_EVIDENCE = "no_evidence"
     OUT_OF_DOMAIN = "out_of_domain"

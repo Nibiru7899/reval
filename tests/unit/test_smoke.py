@@ -27,6 +27,7 @@ def test_reason_codes_match_domain_model_table() -> None:
     assert {c.value for c in ReasonCode} == {
         "policy_satisfied",
         "waiver_applied",
+        "requirement_violated",
         "conflicting_evidence",
         "no_evidence",
         "out_of_domain",

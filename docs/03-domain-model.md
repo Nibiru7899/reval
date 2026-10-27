@@ -131,6 +131,7 @@ so a change to the thing that justified the bound invalidates the bound.
 |---|---|---|
 | `policy_satisfied` | status rule 4 | A clause is satisfied. The ids of the evidence used are listed. |
 | `waiver_applied` | status rule 2 | A waiver for this claim is in effect |
+| `requirement_violated` | status rule 1 | Fresh, eligible evidence FAILs the requirement (always emitted with VIOLATED) |
 | `conflicting_evidence` | status rule 1 | FAIL and PASS evidence coexist |
 | `no_evidence` | rule 6, verdicts | No eligible evidence, or no interval and no point |
 | `out_of_domain` | verdicts | ML evidence outside its applicability domain (detail = domain report) |

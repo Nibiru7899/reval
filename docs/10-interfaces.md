@@ -540,7 +540,7 @@ Status is **history-free** (D4). There is no `previous` parameter. Assessments f
 - **Superseded:** an INVALIDATED item is superseded when a fresh item from the **same producer** for the same subject and quantity exists (the rerun replaced it).
   Superseded items are ignored by rules 3 and 5, so a rerun can clear a lost fail.
 - **Rules, in order (first match wins):**
-  1. **VIOLATED:** any eligible item has verdict FAIL. Reason codes: `CONFLICTING_EVIDENCE` if an eligible PASS also exists, plus the FAIL ids.
+  1. **VIOLATED:** any eligible item has verdict FAIL. Reason codes: always `REQUIREMENT_VIOLATED` (the FAIL ids), plus `CONFLICTING_EVIDENCE` if an eligible PASS also exists.
   2. **WAIVED:** an eligible matching waiver exists. Reason `WAIVER_APPLIED`. Its EvidenceUse has `used_in_clause=True`.
   3. **STALE (lost fail):** some non-superseded item with policy-eligible kind has `recorded_verdict == FAIL` and is now INVALIDATED, or is CARRY_FORWARD with a current verdict ≠ FAIL.
      Reason `EVIDENCE_INVALIDATED` with those ids, and `detail={"lost_fail": true}`.
@@ -554,7 +554,7 @@ Status is **history-free** (D4). There is no `previous` parameter. Assessments f
   with `independent_of`, its evidence must be **independent** of every assigned evidence whose kind is listed. Independent ⇔ different `producer_kind` **and** disjoint
   `snapshot.producers[pid].predictors` (D6). The first valid assignment (lowest clause index, then lexicographic ids) wins. Its uses get `used_in_clause=True`.
 - If `changes` contains `REQUIREMENT_CHANGED` for the claim's requirement, add `REQUIREMENT_CHANGED` (informational) to the reasons.
-- `input_hash = sha256_hex(canonical_json({"claim": claim, "requirement": req, "policy": policy, "items": [(evidence.id, freshness, interval, original id)] sorted}))`.
+- `input_hash = sha256_hex(canonical_json({"claim": claim, "requirement": req, "policy": policy, "items": [(evidence.id, freshness, interval, original id)] sorted, "predictors": {producer_id: predictors}}))`.
   It contains no history (I1, I2).
 
 ### 4.6 `planner.py`
