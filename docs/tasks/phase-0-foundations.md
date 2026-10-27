@@ -11,8 +11,8 @@ Conventions for every task file (phases 0–7):
 - **Done** = every acceptance criterion holds, and these all pass (Windows venv shown; elsewhere use `.venv/bin/python`):
   `.venv/Scripts/python -m ruff check .`, `.venv/Scripts/python -m ruff format --check .`, `.venv/Scripts/python -m mypy src`,
   `.venv/Scripts/python -m pytest`. Then update the task's status in `docs/tasks/BACKLOG.md`.
-- **Git:** one task = one branch (`feat/<id>-<slug>`), Conventional Commits with the task ID. Never push. Until decision D26 is made, the
-  **user** fast-forward-merges each finished branch into `main` before the next task starts.
+- **Git:** one task = one branch (`feat/<id>-<slug>`), Conventional Commits with the task ID. Never push. Once the checks and the review
+  pass, the agent fast-forward-merges its branch into `main` locally (decision D26).
 - **Tests live under `tests/` only** (`tests/unit/…`, `tests/property/`, `tests/integration/`, `tests/golden/`, `tests/bench/`). pytest runs with
   `--import-mode=importlib` and `pythonpath = ["src", ".", "examples/motor_thermal"]`. `tests/unit/motor/` has **no** `__init__.py`.
 - **`NEEDS HUMAN`** marks an acceptance item that only the owner can judge. Every such item comes with a runnable check the agent does run.
