@@ -13,10 +13,35 @@ Conventions: see the header of `phase-0-foundations.md`.
 - Tier A and Tier B results are stored and reported **separately**. Never pool them. Tier A truth comes only from recorded **test** cycles. `reserve` profiles are never subjects.
 - Benchmarks contain **no waivers**.
 
+**Phase refinement (2026-10-28, Opus).** Measured cost before Phase 5:
+- An ML producer run takes about 6 s. Most of that is loading the `uq_*` artifact (5–6 s, because the AD stores 200k × 55 standardized rows) plus the
+  exact kNN check.
+- `run --all` on the motor project means about 480 ML runs plus about 250 others, roughly an hour.
+
+With 1,000+ scenarios and B0 rerunning everything, that's infeasible. So:
+- **P5-00 (new, first): producer performance.**
+  - `reval.sdk.Context.load` gets an in-process cache keyed by `(artifact id, content_hash)`. A changed artifact can never be served stale.
+  - The motor ML producers rebuild an `ApplicabilityDomain` at most once per process per artifact hash, through a module-level cache keyed the same way.
+  - Target: < 1 s per ML producer run after warm-up, with identical evidence (same ids) as before.
+  - Files: `src/reval/sdk/context.py`, `examples/motor_thermal/motor/producers.py`, plus tests showing the cache never returns a stale artifact.
+- **Benchmark subject subset.** The bench uses a configurable subset of the motor subjects, default 24: 12 recorded test cycles and 12 parametric
+  cycles across length classes and in/out of domain, plus C-SHAFT and 4 current-limit claims. That gives about 53 claims. The subset is part of the
+  bench config, so it's hashed and pre-registered. docs/06 §2's "≈ 170 claims" becomes "≈ 50 claims per scenario (bench subset)".
+- **Producer result cache (R8)** lives in `bench/harness/cache.py`. It is keyed by `(producer code hash, sorted dep selector hashes, subject id,
+  settings hash)` and stored under `bench/cache/` (git-ignored). B0, ReVal and the baselines share it. That's sound because evidence ids are
+  content-derived. A cache hit must give a byte-identical Evidence.
+- **Instance counts** are set by the pilot (P5-17). Start at 10 per change type, with ≥ 30 base snapshots.
+
 ---
 
+## P5-00 — Producer performance (in-process artifact and AD caches)
+- **Owner:** sonnet · **Depends on:** P4-03 · **Read first:** the phase refinement above, `docs/10` §7
+- **Files:** `src/reval/sdk/context.py`, `examples/motor_thermal/motor/producers.py`, `tests/unit/sdk/test_context_cache.py`, `tests/unit/motor/test_producer_speed.py`
+- **Spec:** described in the phase refinement above.
+- **Acceptance:** cache tests pass (a changed artifact hash is never served stale). A `data` test shows a warm ML producer run < 1 s, with evidence ids identical to an uncached run.
+
 ## P5-02 — Bench harness: throwaway clones + scenario commits
-- **Owner:** sonnet · **Depends on:** P3-06, P4-10 · **Read first:** `docs/06` §2, ADR 0005
+- **Owner:** sonnet · **Depends on:** P3-06, P4-10, P5-00 · **Read first:** `docs/06` §2, ADR 0005
 - **Files:** `bench/__init__.py`, `bench/harness/__init__.py`, `bench/harness/workspace.py`, `tests/bench/test_workspace.py`
 - **Spec:** `Workspace.create(base_repo: Path, tmp_root: Path, data_cache: Path | None) -> Workspace` runs `git clone --local` of the project into `tmp_root/<scenario_id>` and copies
   (hardlinks where possible) `data/` and `models/` from the cache. It also has `commit(message) -> str` (the rev), `run_reval(args) -> subprocess.CompletedProcess`

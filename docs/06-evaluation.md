@@ -52,8 +52,8 @@ so ReVal is exercised exactly as a user would exercise it.
 contribute only to RQ1/RQ3, never to UAR_truth.
 
 **Size.** ~30 instances per type × 12 types, built on **≥ 30 distinct base snapshots** (different trained-model sets, splits of
-`reserve`, and limit levels). Each scenario has ≈ 170 claims: ~80 subjects × 2 thermal targets (`pm_peak`, `sw_peak`), plus the
-non-thermal shaft and current-limit claims. The final instance counts are fixed after the pilot (§6) from measured runtime.
+`reserve`, and limit levels). Each scenario has ≈ 53 claims: a pre-registered subset of 24 motor subjects (12 recorded test cycles, 12 parametric) × 2 thermal targets
+(`pm_peak`, `sw_peak`), plus the shaft claim and 4 current-limit claims. The full 80-subject library is too costly to rerun per scenario (Phase 5 refinement). The final instance counts are fixed after the pilot (§6) from measured runtime.
 
 ### Ground truth (two oracles, never conflated)
 
