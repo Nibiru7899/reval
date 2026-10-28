@@ -3,6 +3,7 @@
 import ast
 from pathlib import Path
 
+import reval
 import reval.core
 
 FORBIDDEN_TOP_LEVEL = {
@@ -38,3 +39,28 @@ def test_core_has_no_impure_imports() -> None:
         if _is_forbidden(mod)
     }
     assert not offenders, f"impure imports in reval.core: {sorted(offenders)}"
+
+
+def _offending_bench_imports(root: Path) -> set[str]:
+    return {
+        f"{py.relative_to(root)}: {mod}"
+        for py in root.rglob("*.py")
+        for mod in _imported_modules(ast.parse(py.read_text(encoding="utf-8")))
+        if mod == "bench" or mod.startswith("bench.")
+    }
+
+
+def test_reval_and_motor_never_import_bench() -> None:
+    """Benchmark code may import the product, never the reverse (docs/tasks/phase-5-bench.md)."""
+    import motor
+
+    for pkg_file in (reval.__file__, motor.__file__):
+        assert pkg_file is not None
+        offenders = _offending_bench_imports(Path(pkg_file).parent)
+        assert not offenders, f"product code imports bench: {sorted(offenders)}"
+
+
+def test_bench_import_detector_flags_offenders(tmp_path: Path) -> None:
+    (tmp_path / "bad.py").write_text("from bench.world import World\nimport bench\n", encoding="utf-8")
+    (tmp_path / "ok.py").write_text("import benchmark_helpers\n", encoding="utf-8")
+    assert len(_offending_bench_imports(tmp_path)) == 2
