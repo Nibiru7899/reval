@@ -1,5 +1,7 @@
 """`reval` command-line entry point. Commands are added per docs/09-api-and-ui.md as milestones land."""
 
+import contextlib
+import sys
 from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
@@ -10,7 +12,8 @@ import typer
 from reval import __version__
 from reval.cli import render
 from reval.errors import LockNotFoundError, RevalError
-from reval.gitio import LOCK_FILE, read_lock
+from reval.gitio import LOCK_FILE, read_lock, snapshot_at_rev
+from reval.gitio.git import repo_subdir
 from reval.services import Project
 
 app = typer.Typer(
@@ -133,5 +136,37 @@ def run(
     if text:
         typer.echo(text)
     code = render.exit_code(list(after.values()))
+    if code:
+        raise typer.Exit(code)
+
+
+@app.command()
+@_guard
+def diff(
+    a: Annotated[str, typer.Argument(help="Base revision.")],
+    b: Annotated[str | None, typer.Argument(help="Second revision (default: the working tree).")] = None,
+    project: ProjectOpt = Path(),
+    format: Annotated[
+        Literal["table", "json", "markdown"], typer.Option("--format", help="table, json or markdown")
+    ] = "table",
+) -> None:
+    """Change set, evidence freshness and affected claims between revisions (reads reval.lock.json)."""
+    proj = Project.open(project)
+    repo_root, subdir = repo_subdir(proj.root)
+    old = snapshot_at_rev(repo_root, a, subdir)
+    new = snapshot_at_rev(repo_root, b, subdir) if b is not None else proj.snapshot()
+    report = proj.diff(old, new)
+    if format == "json":
+        typer.echo(render.diff_json(report))
+    elif format == "markdown":
+        # Markdown carries non-ASCII status icons; a legacy console codepage must not crash the command.
+        with contextlib.suppress(AttributeError, ValueError):
+            sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+        typer.echo(render.render_diff_markdown(report), nl=False)
+    else:
+        text = render.render_diff(report)
+        if text:
+            typer.echo(text)
+    code = render.exit_code(list(report.after.values()))
     if code:
         raise typer.Exit(code)

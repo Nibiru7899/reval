@@ -7,7 +7,9 @@ from reval.core.canonical import canonical_json, sha256_hex
 from reval.core.diff import diff_snapshots
 from reval.core.freshness import carry_forward, classify_evidence
 from reval.core.selectors import selector_hash
+from reval.core.status import AssessInput, assess_all
 from reval.domain import (
+    ACCEPTED_STATUSES,
     DEFAULT_POLICIES,
     Artifact,
     ArtifactKind,
@@ -24,6 +26,7 @@ from reval.domain import (
     Snapshot,
     Tolerance,
 )
+from tests.property.strategies import ImpactCase, classify_and_assess, impact_cases, strip_declarations
 
 F = FreshnessClass
 SEL = "params#/f"
@@ -124,3 +127,29 @@ def test_i5_monotone_inflation(
         assert small is not None
         assert large >= small - 1e-9
         assert large >= w - 1e-9  # never narrower than the recorded interval
+
+
+# -- I3 and I7 (P3-10) -------------------------------------------------------------------------------
+
+
+@given(impact_cases())
+def test_i3_stripping_tolerances_and_scope_never_adds_accepted_claims(case: ImpactCase) -> None:
+    """Declared tolerances and scope boxes can only keep evidence alive; removing them never helps a claim."""
+    declared = classify_and_assess(case.old, case.new, case.evidence)
+    stripped_evidence = list({e.id: e for e in map(strip_declarations, case.evidence)}.values())
+    stripped = classify_and_assess(case.old, case.new, stripped_evidence)
+    for cid, a in stripped.items():
+        if a.status in ACCEPTED_STATUSES:
+            assert declared[cid].status in ACCEPTED_STATUSES, (cid, a.status, declared[cid].status)
+    assert sum(a.status in ACCEPTED_STATUSES for a in stripped.values()) <= sum(
+        a.status in ACCEPTED_STATUSES for a in declared.values()
+    )
+
+
+@given(impact_cases(change=False))
+def test_i7_assess_after_empty_diff_equals_assess(case: ImpactCase) -> None:
+    """With no change every item is exactly fresh, so the freshness stage is the identity."""
+    assert case.old == case.new
+    assert diff_snapshots(case.old, case.new).changes == ()
+    direct = assess_all(case.old, [AssessInput(e, F.FRESH_EXACT) for e in case.evidence])
+    assert classify_and_assess(case.old, case.new, case.evidence) == direct

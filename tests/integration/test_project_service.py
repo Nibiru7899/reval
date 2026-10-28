@@ -59,7 +59,7 @@ def test_single_run(root: Path) -> None:
     assert e.subject_id == "D1" and e.result.point == 30.0
 
 
-def test_editing_load_scale_invalidates_temperature_not_shaft(root: Path) -> None:
+def test_editing_load_scale_carries_sim_invalidates_ml_not_shaft(root: Path) -> None:
     p = Project.open(root)
     p.run_all()
     params = root / "params" / "params.yaml"
@@ -68,16 +68,22 @@ def test_editing_load_scale_invalidates_temperature_not_shaft(root: Path) -> Non
     )
     after = Project.open(root).assess()
     fresh = {u.evidence_id: u.freshness for a in after.values() for u in a.evidence}
-    by_producer = {e.id: e.producer_id.split(":")[1] for e in p.store.list_evidence()}
-    state = {(by_producer[i], f) for i, f in fresh.items()}
+    stored = {e.id: e.producer_id.split(":")[1] for e in p.store.list_evidence()}
+    # Carried items are derived (new ids, never stored), so they are absent from the store.
+    state = {(stored.get(i, "<carried>"), f) for i, f in fresh.items()}
     assert ("shaft_check", FreshnessClass.FRESH_EXACT) in state
     assert ("measure_temp", FreshnessClass.FRESH_EXACT) in state  # depends on data only
-    assert ("sim_temp", FreshnessClass.INVALIDATED) in state
-    assert ("predict_temp", FreshnessClass.INVALIDATED) in state
+    assert ("<carried>", FreshnessClass.CARRY_FORWARD) in state  # sim_temp: tolerance on load/scale
+    assert ("predict_temp", FreshnessClass.INVALIDATED) in state  # no tolerance declared
+    assert not any(f is FreshnessClass.CARRY_FORWARD and i in stored for i, f in fresh.items())
     assert after["C-SHAFT"].status is Status.SUPPORTED
-    assert after["C-S1-TEMP"].satisfied_clause == 1  # measurement alone; the ML+physics clause is gone
+    assert (
+        after["C-S1-TEMP"].satisfied_clause == 1
+    )  # carried physics [52, 68] alone is not a clause; measurement is
     assert after["C-S1-HI"].status is Status.SUPPORTED
-    assert after["C-S2-TEMP"].status is Status.STALE  # the only FAIL (physics) was invalidated: rule 3
+    assert (
+        after["C-S2-TEMP"].status is Status.VIOLATED
+    )  # the carried FAIL interval [84.3, 111.7] still exceeds 80
 
 
 def test_lock_is_deterministic_and_round_trips(root: Path) -> None:

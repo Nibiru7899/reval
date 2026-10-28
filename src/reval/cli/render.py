@@ -7,7 +7,8 @@ from rich.console import Console
 from rich.table import Table
 
 from reval.core.canonical import canonical_json
-from reval.domain import ACCEPTED_STATUSES, Assessment, Status
+from reval.domain import ACCEPTED_STATUSES, Assessment, Change, Status
+from reval.services import DiffReport
 
 # Text labels carry the meaning; colour is decoration only (no status by colour alone).
 _STYLE = {
@@ -88,3 +89,133 @@ def render_before_after(before: Mapping[str, Assessment], after: Mapping[str, As
         for cid in sorted(after)
     ]
     return _emit("Before / after", ["CLAIM", "BEFORE", "AFTER", "CLAUSE"], rows, [1, 2])
+
+
+DISCLAIMER = (
+    "ReVal reports the state of recorded evidence against declared requirements. It does not certify safety."
+)
+
+
+def _value(v: object) -> str:
+    return "-" if v is None else str(v)
+
+
+def _change_detail(c: Change) -> str:
+    parts: list[str] = []
+    if c.old is not None or c.new is not None:
+        parts.append(f"{_value(c.old)} -> {_value(c.new)}")
+    if c.delta is not None:
+        parts.append(f"delta {c.delta:g}")
+    if c.detail:
+        parts.append(c.detail)
+    return "; ".join(parts) if parts else "-"
+
+
+def _change_rows(report: DiffReport) -> list[list[str]]:
+    return [[c.kind.value.upper(), c.target, _change_detail(c)] for c in report.changes.changes]
+
+
+def _claim_rows(report: DiffReport) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for cid in sorted(report.after):
+        after = report.after[cid]
+        before = report.before.get(cid)
+        rows.append(
+            [
+                cid,
+                before.status.value.upper() if before else "-",
+                after.status.value.upper(),
+                "yes" if cid in report.affected_claims else "no",
+                _reasons(after) or "-",
+            ]
+        )
+    return rows
+
+
+def diff_json(report: DiffReport) -> str:
+    """``canonical_json`` of the whole report (freshness results flattened; nothing time-dependent)."""
+    body = {
+        "changes": report.changes,
+        "freshness": {
+            eid: {"class": fr.cls.value, "inflation": fr.inflation, "reasons": fr.reasons}
+            for eid, fr in sorted(report.freshness.items())
+        },
+        "before": {k: report.before[k] for k in sorted(report.before)},
+        "after": {k: report.after[k] for k in sorted(report.after)},
+        "affected_claims": list(report.affected_claims),
+    }
+    return canonical_json(body).decode("utf-8")
+
+
+def render_diff(report: DiffReport) -> str:
+    """Change set and claim section as plain text (or a Rich table on a TTY, returning '')."""
+    out: list[str] = []
+    changes = _change_rows(report)
+    if changes:
+        text = _emit("Changes", ["KIND", "TARGET", "DETAIL"], changes, [])
+        if text:
+            out.append(text)
+    else:
+        out.append("no changes")
+    claims = _claim_rows(report)
+    if claims:
+        text = _emit("Claims", ["CLAIM", "BEFORE", "AFTER", "AFFECTED", "REASONS"], claims, [1, 2])
+        if text:
+            out.append(text)
+    return "\n\n".join(out)
+
+
+# Status icon plus the word, so no status is signalled by a symbol alone.
+_ICON = {
+    Status.SUPPORTED: "✔",
+    Status.WAIVED: "✔",
+    Status.STALE: "⚠",
+    Status.INCONCLUSIVE: "?",
+    Status.VIOLATED: "✖",
+}
+
+
+def _md(cell: str) -> str:
+    return cell.replace("|", "\\|").replace("\n", " ")
+
+
+def _md_table(headers: Sequence[str], rows: Sequence[Sequence[str]]) -> list[str]:
+    lines = ["| " + " | ".join(headers) + " |", "|" + "|".join("---" for _ in headers) + "|"]
+    lines += ["| " + " | ".join(_md(c) for c in r) + " |" for r in rows]
+    return lines
+
+
+def _md_status(status: Status | None) -> str:
+    return "-" if status is None else f"{_ICON[status]} {status.value.upper()}"
+
+
+def render_diff_markdown(report: DiffReport) -> str:
+    """GitHub-flavoured Markdown for PR comments. Deterministic: no timestamps, sorted rows."""
+    need = [cid for cid, a in sorted(report.after.items()) if a.status not in ACCEPTED_STATUSES]
+    n = len(need)
+    noun = "claim needs" if n == 1 else "claims need"
+    lines = [
+        "## ReVal change impact",
+        "",
+        f"**{n} {noun} revalidation.** {len(report.affected_claims)} of {len(report.after)} claims affected "
+        f"by {len(report.changes.changes)} change(s).",
+        "",
+        "### Changes",
+        "",
+    ]
+    changes = _change_rows(report)
+    lines += _md_table(["Kind", "Target", "Detail"], changes) if changes else ["No changes."]
+    lines += ["", "### Claims", ""]
+    claim_rows = [
+        [
+            cid,
+            _md_status(report.before[cid].status if cid in report.before else None),
+            _md_status(report.after[cid].status),
+            "yes" if cid in report.affected_claims else "no",
+            _reasons(report.after[cid]) or "-",
+        ]
+        for cid in sorted(report.after)
+    ]
+    lines += _md_table(["Claim", "Before", "After", "Affected", "Reasons"], claim_rows)
+    lines += ["", f"_{DISCLAIMER}_", ""]
+    return "\n".join(lines)

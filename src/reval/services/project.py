@@ -2,12 +2,14 @@
 
 import sys
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from reval.core.selectors import selector_hash
+from reval.core.diff import diff_snapshots
+from reval.core.freshness import FreshnessResult, carry_forward, classify_all
 from reval.core.status import AssessInput, assess_all
-from reval.domain import Assessment, Evidence, FreshnessClass, Snapshot
+from reval.domain import Assessment, ChangeSet, Evidence, FreshnessClass, Snapshot
 from reval.domain.engineering import Subject
 from reval.errors import ProducerError, RevalError
 from reval.gitio import lockfile
@@ -27,23 +29,15 @@ def _purge_modules(names: list[str]) -> None:
         del sys.modules[mod]
 
 
-def placeholder_freshness(e: Evidence, current: Snapshot) -> FreshnessClass:
-    """Phase 2 placeholder (replaced by core/freshness.py in P3-06).
+@dataclass(frozen=True)
+class DiffReport:
+    """Result of comparing two snapshots (docs/10 §10)."""
 
-    FRESH_EXACT iff every dependency hash and the producer code hash match the current snapshot;
-    anything else, including an unparseable selector or a vanished producer, is INVALIDATED (fail closed).
-    """
-    producer = current.producers.get(e.producer_id)
-    if producer is None or producer.code_hash != e.provenance.producer_code_hash:
-        return FreshnessClass.INVALIDATED
-    for dep in e.deps:
-        try:
-            now = selector_hash(current, dep.selector)
-        except RevalError:
-            return FreshnessClass.INVALIDATED
-        if now != dep.version_hash:
-            return FreshnessClass.INVALIDATED
-    return FreshnessClass.FRESH_EXACT
+    changes: ChangeSet
+    freshness: dict[str, FreshnessResult]
+    before: dict[str, Assessment]
+    after: dict[str, Assessment]
+    affected_claims: tuple[str, ...]  # status changed, or any evidence for the claim not FRESH_EXACT
 
 
 class Project:
@@ -93,10 +87,64 @@ class Project:
         """Assess every claim; the result is stored as a new assessment batch (append-only)."""
         snap = snapshot if snapshot is not None else self.snapshot()
         self.store.put_snapshot(snap)
-        items = [AssessInput(e, placeholder_freshness(e, snap)) for e in self.store.list_evidence()]
-        assessments = assess_all(snap, items)
+        previous_id = self.store.latest_assessed_snapshot(before=snap.id)
+        previous = self.store.get_snapshot(previous_id) if previous_id is not None else None
+        # Only for the REQUIREMENT_CHANGED note; it never influences freshness.
+        note = diff_snapshots(previous, snap) if previous is not None else None
+        assessments, _ = self._assess_at(snap, note)
         self.store.put_assessments(snap.id, list(assessments.values()))
         return assessments
+
+    def _assess_at(
+        self, snap: Snapshot, note: ChangeSet | None = None
+    ) -> tuple[dict[str, Assessment], dict[str, FreshnessResult]]:
+        """Classify all stored evidence against ``snap`` and assess; stores nothing.
+
+        A missing old snapshot leaves its evidence without a change set, which classify_all
+        invalidates (fail closed). Carried items are materialised here and never stored (D5).
+        """
+        evidence = self.store.list_evidence()
+        snapshots: dict[str, Snapshot] = {}
+        changesets: dict[str, ChangeSet] = {}
+        for sid in sorted({e.provenance.snapshot_id for e in evidence}):
+            old = snap if sid == snap.id else self.store.get_snapshot(sid)
+            if old is not None:
+                snapshots[sid] = old
+                changesets[sid] = diff_snapshots(old, snap)
+        freshness = classify_all(evidence, snapshots, snap, changesets)
+        items: list[AssessInput] = []
+        for e in evidence:
+            fr = freshness[e.id]
+            if fr.cls is FreshnessClass.CARRY_FORWARD:
+                items.append(
+                    AssessInput(carry_forward(e, fr, snap), FreshnessClass.CARRY_FORWARD, original=e)
+                )
+            else:
+                items.append(AssessInput(e, fr.cls))
+        return assess_all(snap, items, note), freshness
+
+    def diff(self, a: Snapshot, b: Snapshot) -> DiffReport:
+        """Change set a -> b, evidence freshness at b, and claim statuses at a and at b (nothing stored)."""
+        self.store.put_snapshot(a)
+        self.store.put_snapshot(b)
+        changes = diff_snapshots(a, b)
+        before, _ = self._assess_at(a)
+        after, freshness = self._assess_at(b, changes)
+        evidence = self.store.list_evidence()
+        affected: list[str] = []
+        for cid in sorted(b.claims):
+            claim = b.claims[cid]
+            quantity = b.requirements[claim.requirement_id].quantity
+            stale_evidence = any(
+                e.subject_id == claim.subject_id
+                and e.result.quantity == quantity
+                and freshness[e.id].cls is not FreshnessClass.FRESH_EXACT
+                for e in evidence
+            )
+            old_status = before[cid].status if cid in before else None
+            if stale_evidence or old_status != after[cid].status:
+                affected.append(cid)
+        return DiffReport(changes, freshness, before, after, tuple(affected))
 
     def run(self, producer_id: str, subject_id: str) -> tuple[Evidence, ...]:
         """Run one producer on one subject against the live snapshot and store the evidence."""
