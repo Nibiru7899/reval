@@ -116,7 +116,7 @@ Variables: z_j ∈ {0,1} (run *j* selected), x_{j,o} ∈ {0,1} (run *j* assigned
 u_c ∈ {0,1} (claim *c* left unrestored).
 
 ```
-min   Σ_j cost_j · z_j  +  M · Σ_c w_c · u_c
+min   Σ_j (cost_j / p_j) · z_j  +  M · Σ_c w_c · u_c
 s.t.  Σ_k y_{c,k} + u_c ≥ 1                         ∀ c
       y_{c,k} ≤ Σ_j x_{j,o}                          ∀ c, k, o ∈ K_{c,k}
       x_{j,o} ≤ z_j                                  ∀ j, o
@@ -124,19 +124,35 @@ s.t.  Σ_k y_{c,k} + u_c ≥ 1                         ∀ c
       x_{j,o} + x_{j′,o′} ≤ 1                        for o.independent_of ∋ kind(o′) and (predictors(j) ∩ predictors(j′) ≠ ∅ or kind(j) = kind(j′))  (independence)
 ```
 
-w_c = integer criticality weight (low 1, medium 3, high 10). Costs are scaled to integers (×100). M = 1 + Σ_j cost_j, which is larger than the total cost of all candidates.
+w_c = integer criticality weight (low 1, medium 3, high 10). p_j ∈ (0, 1] is the run's decisiveness estimate (below; 1 for reuse candidates and
+whenever no prior evidence exists, which gives the one-shot plan). The objective coefficient is the **expected** cost cost_j / p_j of repeating
+run *j* until it is decisive, scaled to an integer as `round(cost_j · 100 / p_j)` (`COST_SCALE = 100`, hundredths of a cost unit; p_j ≥ 0.05 bounds it at
+20 × the scaled cost). M = 1 + Σ_j round(cost_j · 100 / p_j), which is larger than the expected cost of all candidates. `total_cost` reports the true Σ cost_j.
 One run can serve many claims: one bench measurement of DC-07 yields evidence for both `pm_peak` and `sw_peak`.
 `unrestorable` = claims with no coverable clause even if every candidate is selected. `deferred` = restorable claims left uncovered under a budget.
 
 ### Budgeted variant
-Maximize `Σ_c w_c (1 − u_c)` subject to `Σ_j cost_j z_j ≤ B`, using the same constraints. Ties are broken toward lower cost with a single integer objective
+Maximize `Σ_c w_c (1 − u_c)` subject to `Σ_j cost_j z_j ≤ B` (the **true** cost, scaled ×100), using the same constraints. Ties are broken toward lower cost with a single integer objective
 (`10-interfaces.md` §4.6). It powers the UI's budget slider.
 
-### Sequential (expected-cost) variant — stretch goal
-A planned run may return `inconclusive`. Estimate p_j = P(decisive) from the current interval width relative to the margin.
+### Decisiveness estimate (P4-17)
+A planned run may return `inconclusive` (the M4 demo planned five cheap runs and restored nothing). Each new-run candidate *j* = (P, S) gets a
+deterministic p_j = P(decisive), from the **most recent stored evidence** of the same (producer, subject, quantity), whatever its freshness
+(for a carried-forward item, the recorded original is judged: a rerun removes the inflation). The service collects these items; core stays pure.
+- no prior evidence → p = 1;
+- prior PASS or FAIL against the requirement → p = 1;
+- prior INCONCLUSIVE because out of domain → p = p_ood (default 0.05), unless the item is no longer fresh (CARRY_FORWARD or INVALIDATED, i.e. the
+  change set touched an artifact the producer depends on) → p = 0.5;
+- prior INCONCLUSIVE by margin → p = clip(|center − L| / half-width, p_min = 0.05, 1), with center and half-width of the verdict interval;
+  a prior with no usable interval → p_min.
+
+A candidate serving several requirements takes the **minimum** p over them (conservative: it is costed as its least decisive use).
+`CandidateRun.p_decisive` and `PlannedRun.p_decisive` carry the estimate. Greedy uses the same expected cost in its ratio and redundancy pass.
+
+### Sequential variant — stretch goal
 For a single claim with alternative clauses, ordering clauses by `cost/p` approximates the optimal sequential test order
 (the classic sequential-testing and Pandora's-box line of work, Weitzman 1979). Execute → re-assess → re-plan (receding horizon).
-Compare expected cost against the one-shot ILP in the benchmark.
+Compare expected cost against the one-shot ILP in the benchmark (`Project.plan(decisiveness_aware=False)` gives the one-shot plan).
 
 ### Solver
 OR-Tools CP-SAT, with a fixed seed and `num_workers=1` for determinism. Problem sizes are hundreds of variables, so solves take

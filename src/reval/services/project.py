@@ -175,8 +175,14 @@ class Project:
         planner: str = "ilp",
         objective: str = "min_cost",
         budget: float | None = None,
+        decisiveness_aware: bool = True,
     ) -> RevalidationPlan:
-        """Plan the cheapest runs that restore STALE/INCONCLUSIVE claims; the plan is stored (append-only)."""
+        """Plan the cheapest runs that restore STALE/INCONCLUSIVE claims; the plan is stored (append-only).
+
+        With ``decisiveness_aware`` (the default) the planner minimizes expected cost, using the most recent
+        stored evidence of each (producer, subject, quantity) to estimate P(decisive) (P4-17); with False it
+        assumes every run is decisive (the one-shot plan).
+        """
         snap = snapshot if snapshot is not None else self.snapshot()
         self.store.put_snapshot(snap)
         assessments, _, items = self._assess_detail(snap)
@@ -197,8 +203,28 @@ class Project:
                     latest[key] = (pos, e.result.in_domain is False)
         out_of_domain = frozenset(k for k, (_, ood) in latest.items() if ood)
 
+        # Most recent stored item per (producer, subject, quantity), whatever its freshness (P4-17).
+        prior: dict[tuple[str, str, str], AssessInput] | None = None
+        if decisiveness_aware:
+            prior = {}
+            ranked: dict[tuple[str, str, str], int] = {}
+            for inp in items:
+                e = inp.original if inp.original is not None else inp.evidence
+                if e.producer_kind is ProducerKind.WAIVER:
+                    continue
+                key3 = (e.producer_id, e.subject_id, e.result.quantity)
+                pos = position.get(e.id, -1)
+                if key3 not in ranked or pos >= ranked[key3]:
+                    ranked[key3] = pos
+                    prior[key3] = inp
+
         problem = build_problem(
-            snap, assessments, items, available=available, known_out_of_domain=out_of_domain
+            snap,
+            assessments,
+            items,
+            available=available,
+            known_out_of_domain=out_of_domain,
+            prior=prior,
         )
         try:
             result = make_plan(

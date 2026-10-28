@@ -320,6 +320,7 @@ class CandidateRun(Frozen):
     satisfies: tuple[str, ...]            # obligation keys, sorted
     predictors: tuple[str, ...] = ()      # copied from the producer (for independence constraints)
     existing_evidence_id: str | None = None
+    p_decisive: float = 1.0               # in (0, 1]; P(the run is decisive), docs/04 A7 (P4-17). 1 for reuse
 
 class PlanningProblem(Frozen):
     snapshot_id: str
@@ -336,6 +337,7 @@ class PlannedRun(Frozen):
     subject_id: str
     cost: float
     discharges: tuple[str, ...]           # obligation keys used by the chosen clauses
+    p_decisive: float = 1.0               # copied from the candidate
 
 class RevalidationPlan(Frozen):
     id: str                               # content_id(self)
@@ -564,7 +566,11 @@ CRITICALITY_WEIGHT: dict[str, int] = {"low": 1, "medium": 3, "high": 10}
 def build_problem(snapshot: Snapshot, assessments: Mapping[str, Assessment],
                   items: Sequence[AssessInput], *,
                   available: Callable[[str, str], bool],            # (producer_id, subject_id) -> runnable?
-                  known_out_of_domain: frozenset[tuple[str, str]] = frozenset()) -> PlanningProblem: ...
+                  known_out_of_domain: frozenset[tuple[str, str]] = frozenset(),
+                  prior: Mapping[tuple[str, str, str], AssessInput] | None = None,  # (producer, subject, quantity) -> latest item
+                  p_ood: float = 0.05, p_min: float = 0.05) -> PlanningProblem: ...
+def decisiveness(prior: AssessInput | None, req: Requirement, *,
+                 p_ood: float = 0.05, p_min: float = 0.05) -> float: ...   # docs/04 A7 "Decisiveness estimate"
 def plan(problem: PlanningProblem, *, planner: Literal["ilp", "greedy", "all"] = "ilp",
          objective: Literal["min_cost", "max_restored"] = "min_cost", budget: float | None = None,
          max_time_s: float = 10.0) -> RevalidationPlan: ...
@@ -582,15 +588,18 @@ def plan(problem: PlanningProblem, *, planner: Literal["ilp", "greedy", "all"] =
   and `P.fidelity >= min_fidelity`.
 - **Independence (`incompatible`):** for every clause and every conjunct pair (o, o′) where `o.requirement.independent_of` contains o′'s kind, and every candidate pair
   (j, j′) whose `predictors` intersect or whose producer kinds are equal → `x_{j,o} + x_{j′,o′} ≤ 1`.
-- **ILP (CP-SAT):** integer costs `cost_int = round(cost * 100)`. Integer weights `w_c` from `CRITICALITY_WEIGHT`. Variables `z_j`, `x_{j,o}`, `y_{c,k}`, `u_c` (docs/04 A7):
+- **Decisiveness (P4-17):** each new-run candidate gets `p_decisive` = min over the requirements of the obligations it satisfies of
+  `decisiveness(prior.get((P, S, req.quantity)), req)` (docs/04 A7). `prior=None` → every `p_decisive = 1` (the one-shot plan, unchanged).
+  `Project.plan(..., decisiveness_aware=True)` builds `prior` from the store (latest item per key by append order, waivers skipped).
+- **ILP (CP-SAT):** integer costs `cost_int = round(cost * 100)`; integer expected costs `exp_int = round(cost * 100 / p_decisive)`. Integer weights `w_c` from `CRITICALITY_WEIGHT`. Variables `z_j`, `x_{j,o}`, `y_{c,k}`, `u_c` (docs/04 A7):
   `x_{j,o} ≤ z_j`; `Σ_{o∈clause} x_{j,o} ≤ 1` (one run counts once per clause); `y_{c,k} ≤ Σ_j x_{j,o}` for each o in k; `Σ_k y_{c,k} + u_c ≥ 1`; the `incompatible` constraints.
-  - `min_cost`: minimize `Σ cost_int z_j + M · Σ w_c u_c`, where `M = 1 + Σ_j cost_int`.
-  - `max_restored`: subject to `Σ cost_int z_j ≤ round(budget * 100)`, minimize `(1 + Σ_j cost_int) · Σ w_c u_c + Σ cost_int z_j`. This is a single integer objective,
-    lexicographic in effect.
+  - `min_cost`: minimize `Σ exp_int z_j + M · Σ w_c u_c`, where `M = 1 + Σ_j exp_int`.
+  - `max_restored`: subject to `Σ cost_int z_j ≤ round(budget * 100)` (true cost), minimize `(1 + Σ_j exp_int) · Σ w_c u_c + Σ exp_int z_j`. This is a single
+    integer objective, lexicographic in effect. `total_cost` is always the true cost.
   - Solver params: `num_workers=1`, `random_seed=0`, `max_time_in_seconds=max_time_s`. `solver_status` records CP-SAT's status. `FEASIBLE` (time limit hit) sets `reproducible=False`.
     Tests must assert `OPTIMAL`.
-- **greedy:** repeat, picking the candidate with the max `(Σ weights of claims whose cheapest open clause loses an obligation) / max(cost, 0.01)` (ties → candidate id),
-  respecting `incompatible`, until every claim has a fully covered clause or nothing improves. Then drop redundant runs in descending cost order.
+- **greedy:** repeat, picking the candidate with the max `(Σ weights of claims whose cheapest open clause loses an obligation) / max(cost / p_decisive, 0.01)` (ties → candidate id),
+  respecting `incompatible` and the budget on true cost, until every claim has a fully covered clause or nothing improves. Then drop redundant runs in descending expected-cost order.
 - **all:** select every non-reuse candidate that satisfies ≥ 1 obligation, plus every reuse candidate.
 - **`unrestorable`** = claims for which no clause can be covered by **all** candidates together (computed independently of the budget).
   **`deferred`** = claims that are restorable but left uncovered (`u_c = 1`) by the chosen plan. This is only non-empty for `max_restored` / greedy under a budget.

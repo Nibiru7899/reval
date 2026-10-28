@@ -6,6 +6,7 @@ seed, so the same problem always yields the same plan.
 """
 
 import itertools
+import math
 from collections.abc import Callable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from typing import Any, Literal
@@ -14,8 +15,9 @@ from ortools.sat.python import cp_model
 
 from reval.core.canonical import content_id
 from reval.core.status import FRESH_CLASSES, AssessInput
-from reval.core.verdicts import verdict
+from reval.core.verdicts import verdict, verdict_interval
 from reval.domain.assessment import Assessment
+from reval.domain.engineering import Requirement
 from reval.domain.evidence import Evidence, ProducerKind
 from reval.domain.plan import CandidateRun, Obligation, PlannedRun, PlanningProblem, RevalidationPlan
 from reval.domain.policies import EvidenceRequirement
@@ -41,8 +43,57 @@ def rerun_key(producer_id: str, subject_id: str) -> str:
     return f"{RERUN_PREFIX}{producer_id}@{subject_id}"
 
 
+# Decisiveness defaults (docs/04 A7, P4-17).
+P_OOD = 0.05  # prior evidence was out of domain and nothing it depends on has changed since
+P_OOD_TOUCHED = 0.5  # prior evidence was out of domain, but its dependencies changed since
+P_MIN = 0.05  # floor for margin-based estimates; also used when the prior interval is unusable
+
+# Integer scale for CP-SAT: costs and expected costs are counted in hundredths of a cost unit.
+COST_SCALE = 100
+
+PriorKey = tuple[str, str, str]  # (producer_id, subject_id, quantity)
+
+
 def _cost_int(cost: float) -> int:
-    return round(cost * 100)
+    return round(cost * COST_SCALE)
+
+
+def _expected_cost_int(cost: float, p: float) -> int:
+    """``round(cost * COST_SCALE / p)``: expected cost of repeating a run until it is decisive (geometric)."""
+    return round(cost * COST_SCALE / p)
+
+
+def decisiveness(
+    prior: AssessInput | None,
+    req: Requirement,
+    *,
+    p_ood: float = P_OOD,
+    p_min: float = P_MIN,
+) -> float:
+    """Deterministic estimate of P(a new run is decisive) from the most recent prior item (docs/04 A7).
+
+    ``prior`` is the latest stored evidence of the same (producer, subject, quantity), whatever its freshness.
+    For a carried-forward item the recorded original is judged, since a rerun removes the inflation.
+    """
+    if prior is None:
+        return 1.0
+    e = prior.original if prior.original is not None else prior.evidence
+    v, reasons = verdict(e, req)
+    if v is not Verdict.INCONCLUSIVE:
+        return 1.0
+    if any(r.code is ReasonCode.OUT_OF_DOMAIN for r in reasons):
+        # The item is no longer fresh, so something the producer depends on changed: it may be back in domain.
+        touched = prior.freshness in (FreshnessClass.CARRY_FORWARD, FreshnessClass.INVALIDATED)
+        return P_OOD_TOUCHED if touched else p_ood
+    bounds = verdict_interval(e)
+    if bounds is None or not all(math.isfinite(b) for b in bounds):
+        return p_min
+    lo, hi = bounds
+    half = (hi - lo) / 2
+    if half <= 0:
+        return p_min  # unreachable for a straddling interval; err towards "expensive"
+    ratio = abs((lo + hi) / 2 - req.limit) / half
+    return min(1.0, max(p_min, ratio))
 
 
 # ---------------------------------------------------------------------------------------------------------
@@ -72,12 +123,20 @@ def build_problem(
     *,
     available: Callable[[str, str], bool],
     known_out_of_domain: frozenset[tuple[str, str]] = frozenset(),
+    prior: Mapping[PriorKey, AssessInput] | None = None,
+    p_ood: float = P_OOD,
+    p_min: float = P_MIN,
 ) -> PlanningProblem:
     """Obligations and candidates for every STALE or INCONCLUSIVE claim (docs/10 §4.6).
 
     Every conjunct of every clause becomes an obligation (nothing is dropped, D7). Lost-fail claims also get a
     mandatory ``rerun:<producer>@<subject>`` obligation in every clause, so cost-0 reuse never restores them.
+    ``prior`` maps (producer, subject, quantity) to the most recent stored item; each new-run candidate gets
+    ``p_decisive`` = the minimum of ``decisiveness`` over the requirements it serves (P4-17).
+    Without ``prior`` every candidate has ``p_decisive = 1`` and the plan is the one-shot plan.
     """
+    if not (0 < p_ood <= 1 and 0 < p_min <= 1):
+        raise ValueError("p_ood and p_min must lie in (0, 1]")
     by_id: dict[str, AssessInput] = {}
     for inp in items:
         by_id.setdefault(inp.evidence.id, inp)
@@ -138,6 +197,7 @@ def build_problem(
     predictors: dict[str, tuple[str, ...]] = {}
     satisfies: dict[str, set[str]] = {}
     meta: dict[str, tuple[str, str, float, str | None]] = {}  # id -> (producer, subject, cost, evidence id)
+    p_dec: dict[str, float] = {}
 
     # Reuse candidates: fresh PASS items, decided inside the same matching as new runs (D7).
     for cid in planned:
@@ -194,6 +254,13 @@ def build_problem(
             if not hits:
                 continue
             jid = f"{pid}@{sid}"
+            p_j = 1.0
+            if prior is not None:
+                for okey in sorted(hits):
+                    o_req = snapshot.requirements[snapshot.claims[obligations[okey].claim_id].requirement_id]
+                    found = prior.get((pid, sid, o_req.quantity))
+                    p_j = min(p_j, decisiveness(found, o_req, p_ood=p_ood, p_min=p_min))
+            p_dec[jid] = p_j
             kinds[jid] = p.kind
             predictors[jid] = tuple(sorted(p.predictors))
             meta[jid] = (pid, sid, p.cost, None)
@@ -227,6 +294,7 @@ def build_problem(
             satisfies=tuple(sorted(satisfies[jid])),
             predictors=predictors[jid],
             existing_evidence_id=meta[jid][3],
+            p_decisive=p_dec.get(jid, 1.0),
         )
         for jid in sorted(satisfies)
     )
@@ -263,6 +331,8 @@ class _Index:
         for c in problem.candidates:
             if c.cost < 0:
                 raise ValueError(f"candidate {c.id} has a negative cost")
+            if not 0 < c.p_decisive <= 1:
+                raise ValueError(f"candidate {c.id} has p_decisive outside (0, 1]")
             for o in c.satisfies:
                 if o not in sat:
                     raise ValueError(f"candidate {c.id} satisfies unknown obligation {o}")
@@ -354,6 +424,7 @@ def _finish(
                 subject_id=c.subject_id,
                 cost=c.cost,
                 discharges=tuple(sorted(discharges.get(c.id, ()))),
+                p_decisive=c.p_decisive,
             )
             for c in idx.problem.candidates
             if c.id in selected
@@ -419,13 +490,15 @@ def _solve_ilp(
         if (j, o) in x and (j2, o2) in x:
             m.add(x[(j, o)] + x[(j2, o2)] <= 1)
 
+    # The budget bounds the true cost; the objective is the expected cost sum(cost_j / p_j) (P4-17).
     cost_terms = [_cost_int(c.cost) * z[c.id] for c in p.candidates]
-    big_m = 1 + sum(_cost_int(c.cost) for c in p.candidates)
+    exp_int = {c.id: _expected_cost_int(c.cost, c.p_decisive) for c in p.candidates}
+    big_m = 1 + sum(exp_int.values())
     unrestored = [p.claim_weights[cid] * u[cid] for cid in sorted(u)]
     if budget_int is not None:
         m.add(sum(cost_terms) <= budget_int)
     # min_cost and max_restored share one integer objective; with a budget it is lexicographic in effect.
-    m.minimize(sum(cost_terms) + big_m * sum(unrestored))
+    m.minimize(sum(exp_int[c.id] * z[c.id] for c in p.candidates) + big_m * sum(unrestored))
 
     solver = cp_model.CpSolver()
     solver.parameters.num_workers = 1
@@ -457,12 +530,13 @@ def _greedy(idx: _Index, budget_int: int | None) -> frozenset[str]:
     full = {(cid, k): list(idx.assignments(cid, k)) for cid in claims for k in range(n_clauses[cid])}
     restorable = {cid for cid in claims if any(full[(cid, k)] for k in range(n_clauses[cid]))}
     cost = {c.id: c.cost for c in p.candidates}
+    exp_cost = {c.id: c.cost / c.p_decisive for c in p.candidates}  # the choice uses expected cost (P4-17)
 
     def progress(cid: str, k: int, sel: frozenset[str]) -> int:
         return max(sum(1 for _o, j in a if j in sel) for a in full[(cid, k)])
 
     def remaining(cid: str, k: int, sel: frozenset[str]) -> float:
-        return min(sum(cost[j] for j in {j for _o, j in a} - sel) for a in full[(cid, k)])
+        return min(sum(exp_cost[j] for j in {j for _o, j in a} - sel) for a in full[(cid, k)])
 
     def covered(sel: frozenset[str]) -> set[str]:
         return {cid for cid in restorable if idx.covered_clause(cid, sel) is not None}
@@ -492,7 +566,7 @@ def _greedy(idx: _Index, budget_int: int | None) -> frozenset[str]:
             )
             if gain == 0:
                 continue
-            ratio = gain / max(c.cost, 0.01)
+            ratio = gain / max(exp_cost[c.id], 0.01)
             if best is None or ratio > best[0]:
                 best = (ratio, c.id)
         if best is None:
@@ -501,7 +575,7 @@ def _greedy(idx: _Index, budget_int: int | None) -> frozenset[str]:
         spent += _cost_int(cost[best[1]])
 
     restored = covered(sel)
-    for c in sorted((idx.cand[j] for j in sel), key=lambda c: (-c.cost, c.id)):
+    for c in sorted((idx.cand[j] for j in sel), key=lambda c: (-exp_cost[c.id], c.id)):
         without = sel - {c.id}
         if covered(without) >= restored:
             sel = without

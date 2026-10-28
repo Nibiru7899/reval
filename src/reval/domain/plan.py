@@ -2,6 +2,8 @@
 
 from typing import Literal
 
+from pydantic import Field
+
 from reval.domain.base import Frozen
 from reval.domain.policies import EvidenceRequirement
 
@@ -26,6 +28,8 @@ class CandidateRun(Frozen):
     satisfies: tuple[str, ...]
     predictors: tuple[str, ...] = ()
     existing_evidence_id: str | None = None
+    # Estimated probability that the run returns a decisive (PASS/FAIL) verdict (docs/04 A7, P4-17).
+    p_decisive: float = Field(default=1.0, gt=0.0, le=1.0)
 
 
 class PlanningProblem(Frozen):
@@ -43,6 +47,7 @@ class PlannedRun(Frozen):
     subject_id: str
     cost: float
     discharges: tuple[str, ...]
+    p_decisive: float = Field(default=1.0, gt=0.0, le=1.0)
 
 
 class RevalidationPlan(Frozen):
