@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 
-from reval.api.deps import get_project, require_default_project
+from reval.api.deps import get_project, require_default_project, resolve_snapshot
 from reval.api.schemas import SnapshotSummary
 from reval.domain import Snapshot
 from reval.services import Project
@@ -25,3 +25,11 @@ def list_snapshots(
 def create_snapshot(project: Project = Depends(get_project)) -> Snapshot:  # noqa: B008
     """Snapshot the working tree and store it (idempotent on the snapshot id)."""
     return project.snapshot()
+
+
+@router.get("/snapshots/{s}")
+def get_snapshot(s: str, project: Project = Depends(get_project)) -> Snapshot:  # noqa: B008
+    """One snapshot (claims, requirements, subjects, ...) by id, unique id prefix, or git revision.
+
+    The UI needs requirement text and criticality next to each claim's assessment."""
+    return resolve_snapshot(project, s)

@@ -13,7 +13,7 @@
 | `reval explain CLAIM` | Justification tree with reasons (deterministic text) |
 | `reval report [--html] [--out PATH]` | Render the decision-validity report |
 | `reval graph [--claim ID] --out graph.json` | Export the evidence graph |
-| `reval serve` | Start API + UI locally |
+| `reval serve` | Start API + UI locally (serves `web/dist` at `/` when it is built; `REVAL_WEB_DIST` overrides the path) |
 | `reval api-schema [--out PATH]` | Write the OpenAPI schema (input to the generated TS client) |
 | `reval db upgrade` | Apply Alembic migrations to the configured store |
 
@@ -27,6 +27,7 @@ Single project: the server serves the one project at `REVAL_PROJECT_ROOT`, and `
 ```
 GET  /projects
 GET  /projects/{p}/snapshots                    POST /projects/{p}/snapshots      (working tree)
+GET  /projects/{p}/snapshots/{s}                (id, unique id prefix, or git rev; full snapshot for the UI)
 GET  /projects/{p}/diff?from=&to=
 GET  /projects/{p}/claims?snapshot=&status=
 GET  /projects/{p}/claims/{c}/assessment?snapshot=

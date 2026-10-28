@@ -90,3 +90,21 @@ jobs:
         run: REVAL_DATABASE_URL="$REVAL_TEST_POSTGRES_URL" reval db upgrade
       - name: Migration and store tests on PostgreSQL
         run: pytest tests/integration/test_migrations.py tests/unit/store -m "not data and not slow"
+
+  web:
+    # The workspace UI (P6-06): typecheck, build and component/a11y tests. The client types are generated
+    # (npm run gen:api) and committed; this job fails if they no longer compile against the app.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: npm --prefix web ci
+      - name: Build
+        run: npm --prefix web run build
+      - name: Test
+        run: npm --prefix web test
