@@ -50,8 +50,8 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | P1-08 | LPTN identification + model-form band | sonnet | P1-07, P1-02 | done |
 | P1-09 | Drive map | sonnet | P1-03, P1-06 | done |
 | P1-10 | Duty-cycle generator + subject library | sonnet | P1-02, P1-03 | done |
-| P1-11 | Design optimizer O1/O2/O3 | sonnet | P1-05, P1-06, P1-09, P1-10 | todo |
-| P1-12 | M1 milestone reproduction script | sonnet | P0-03, P0-06, P1-01, P1-02, P1-03, P1-04, P1-05, P1-06, P1-07, P1-08, P1-09, P1-10, P1-11, P1-13 | todo |
+| P1-11 | Design optimizer O1/O2/O3 | sonnet | P1-05, P1-06, P1-09, P1-10 | done |
+| P1-12 | M1 milestone reproduction script | sonnet | P0-03, P0-06, P1-01, P1-02, P1-03, P1-04, P1-05, P1-06, P1-07, P1-08, P1-09, P1-10, P1-11, P1-13 | done |
 | P1-13 | Calibration script: uq artifacts per model | sonnet | P1-05, P1-06 | done |
 
 ## Phase 2 — Core engine ([phase-2-core.md](phase-2-core.md))
@@ -68,14 +68,14 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | P2-08 | Verdicts (E3 part 1) | sonnet | P2-03 | done |
 | P2-09 | Claim status (E3 part 2) + `assess_all` | sonnet | P2-08 | done |
 | P2-10 | SQL store (document tables) | sonnet | P2-03 | done |
-| P2-11 | Project service + lock file (no git) | sonnet | P2-09, P2-10, P2-15 | todo |
-| P2-12 | Property tests I1, I2, I4 + core coverage gate | sonnet | P2-09, P2-11 | todo |
+| P2-11 | Project service + lock file (no git) | sonnet | P2-09, P2-10, P2-15 | done |
+| P2-12 | Property tests I1, I2, I4 + core coverage gate | sonnet | P2-09, P2-11 | done |
 | P2-13 | Motor manifest wiring (non-ML producers) | sonnet+human-review | P0-06, P1-08, P1-09, P1-10, P2-18 | todo |
 | P2-14 | Evidence, producers, policies | sonnet | P2-02 | done |
 | P2-15 | Producer runner | sonnet | P2-16 | done |
 | P2-16 | Snapshot builder | sonnet | P2-04, P2-05, P2-06 | done |
-| P2-17 | CLI: `snapshot` and `status` | sonnet | P2-11 | todo |
-| P2-18 | CLI: `run --all` | sonnet | P2-17 | todo |
+| P2-17 | CLI: `snapshot` and `status` | sonnet | P2-11 | done |
+| P2-18 | CLI: `run --all` | sonnet | P2-17 | done |
 
 ## Phase 3 — Change impact ([phase-3-impact.md](phase-3-impact.md))
 
