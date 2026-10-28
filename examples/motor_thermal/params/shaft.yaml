@@ -1,0 +1,4 @@
+# Shaft design parameters for the analytic shaft_check (study values, not a manufacturer drawing).
+# Largest permitted shaft diameter = nominal + upper tolerance. The requirement limit is in limits.yaml.
+nominal_d_mm: 30.00
+tol_plus_mm: 0.02
