@@ -8,16 +8,21 @@ from pathlib import Path
 
 from reval.core.diff import diff_snapshots
 from reval.core.freshness import FreshnessResult, carry_forward, classify_all
-from reval.core.status import AssessInput, assess_all
+from reval.core.planner import build_problem
+from reval.core.planner import plan as make_plan
+from reval.core.status import FRESH_CLASSES, AssessInput, assess_all
 from reval.domain import Assessment, ChangeSet, Evidence, FreshnessClass, Snapshot
 from reval.domain.engineering import Subject
+from reval.domain.evidence import ProducerKind
+from reval.domain.plan import PlannedRun, RevalidationPlan
 from reval.errors import ProducerError, RevalError
 from reval.gitio import lockfile
 from reval.manifest import ManifestModel, load_manifest
 from reval.manifest.snapshot_builder import build_snapshot
 from reval.sdk import DEFAULT_REGISTRY, ProducerRegistry
 from reval.sdk.runner import run_producer
-from reval.store import SqlStore, open_store
+from reval.services.jobs import run_jobs
+from reval.store import Job, SqlStore, open_store
 
 MANIFEST_FILE = "reval.yaml"
 
@@ -38,6 +43,17 @@ class DiffReport:
     before: dict[str, Assessment]
     after: dict[str, Assessment]
     affected_claims: tuple[str, ...]  # status changed, or any evidence for the claim not FRESH_EXACT
+
+
+@dataclass(frozen=True)
+class PlanOutcome:
+    """Result of executing a plan: evidence appended, one job per run, statuses before and after."""
+
+    plan_id: str
+    evidence: tuple[Evidence, ...]
+    jobs: tuple[Job, ...]
+    before: dict[str, Assessment]
+    after: dict[str, Assessment]
 
 
 class Project:
@@ -98,6 +114,12 @@ class Project:
     def _assess_at(
         self, snap: Snapshot, note: ChangeSet | None = None
     ) -> tuple[dict[str, Assessment], dict[str, FreshnessResult]]:
+        assessments, freshness, _ = self._assess_detail(snap, note)
+        return assessments, freshness
+
+    def _assess_detail(
+        self, snap: Snapshot, note: ChangeSet | None = None
+    ) -> tuple[dict[str, Assessment], dict[str, FreshnessResult], list[AssessInput]]:
         """Classify all stored evidence against ``snap`` and assess; stores nothing.
 
         A missing old snapshot leaves its evidence without a change set, which classify_all
@@ -121,7 +143,7 @@ class Project:
                 )
             else:
                 items.append(AssessInput(e, fr.cls))
-        return assess_all(snap, items, note), freshness
+        return assess_all(snap, items, note), freshness, items
 
     def diff(self, a: Snapshot, b: Snapshot) -> DiffReport:
         """Change set a -> b, evidence freshness at b, and claim statuses at a and at b (nothing stored)."""
@@ -145,6 +167,74 @@ class Project:
             if stale_evidence or old_status != after[cid].status:
                 affected.append(cid)
         return DiffReport(changes, freshness, before, after, tuple(affected))
+
+    def plan(
+        self,
+        snapshot: Snapshot | None = None,
+        *,
+        planner: str = "ilp",
+        objective: str = "min_cost",
+        budget: float | None = None,
+    ) -> RevalidationPlan:
+        """Plan the cheapest runs that restore STALE/INCONCLUSIVE claims; the plan is stored (append-only)."""
+        snap = snapshot if snapshot is not None else self.snapshot()
+        self.store.put_snapshot(snap)
+        assessments, _, items = self._assess_detail(snap)
+
+        def available(producer_id: str, subject_id: str) -> bool:
+            rp = self.registry.get(producer_id)
+            return rp.available_for is None or rp.available_for(snap.subjects[subject_id])
+
+        # Latest fresh ML evidence outside its domain: a rerun would only reproduce that (docs/10 §4.6).
+        position = {e.id: i for i, e in enumerate(self.store.list_evidence())}
+        latest: dict[tuple[str, str], tuple[int, bool]] = {}
+        for inp in items:
+            e = inp.evidence
+            if inp.freshness in FRESH_CLASSES and e.producer_kind is ProducerKind.ML_PREDICTION:
+                key = (e.producer_id, e.subject_id)
+                pos = position.get(e.id, -1)
+                if key not in latest or pos >= latest[key][0]:
+                    latest[key] = (pos, e.result.in_domain is False)
+        out_of_domain = frozenset(k for k, (_, ood) in latest.items() if ood)
+
+        problem = build_problem(
+            snap, assessments, items, available=available, known_out_of_domain=out_of_domain
+        )
+        try:
+            result = make_plan(
+                problem,
+                planner=planner,  # type: ignore[arg-type]
+                objective=objective,  # type: ignore[arg-type]
+                budget=budget,
+            )
+        except ValueError as exc:
+            raise RevalError(str(exc)) from exc
+        self.store.put_plan(result)
+        return result
+
+    def execute_plan(self, plan: RevalidationPlan, *, only: str | None = None) -> PlanOutcome:
+        """Run the plan's runs in order as jobs, append the evidence, then re-assess (a new batch, D18)."""
+        snap = self.snapshot()
+        if snap.id != plan.snapshot_id:
+            raise RevalError(
+                f"plan {plan.id[:12]} was made for snapshot {plan.snapshot_id[:12]}, "
+                f"but the working tree is at {snap.id[:12]}; run `reval plan` again"
+            )
+        if only is not None and only not in snap.producers:
+            raise RevalError(f"unknown producer {only!r}")
+        before = self.assess(snap)
+        runs = [r for r in plan.runs if only is None or r.producer_id == only]
+
+        def execute(run: PlannedRun) -> tuple[Evidence, ...]:
+            return self._run(snap, run.producer_id, self._subject(snap, run.subject_id))
+
+        evidence, jobs = run_jobs(self.store, plan.id, runs, execute)
+        after = self.assess(snap)
+        return PlanOutcome(plan.id, evidence, jobs, before, after)
+
+    def run_plan(self, plan: RevalidationPlan) -> tuple[Evidence, ...]:
+        """Execute ``plan`` and re-assess; returns the evidence it appended."""
+        return self.execute_plan(plan).evidence
 
     def run(self, producer_id: str, subject_id: str) -> tuple[Evidence, ...]:
         """Run one producer on one subject against the live snapshot and store the evidence."""

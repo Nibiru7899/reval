@@ -8,7 +8,9 @@ from rich.table import Table
 
 from reval.core.canonical import canonical_json
 from reval.domain import ACCEPTED_STATUSES, Assessment, Change, Status
+from reval.domain.plan import RevalidationPlan
 from reval.services import DiffReport
+from reval.store import Job
 
 # Text labels carry the meaning; colour is decoration only (no status by colour alone).
 _STYLE = {
@@ -219,3 +221,41 @@ def render_diff_markdown(report: DiffReport) -> str:
     lines += _md_table(["Claim", "Before", "After", "Affected", "Reasons"], claim_rows)
     lines += ["", f"_{DISCLAIMER}_", ""]
     return "\n".join(lines)
+
+
+def plan_json(plan: RevalidationPlan) -> str:
+    return canonical_json(plan).decode("utf-8")
+
+
+def render_plan(plan: RevalidationPlan) -> str:
+    """Runs table plus a summary: restored, unrestorable and deferred claims, cost and solver status."""
+    rows = [[r.producer_id, r.subject_id, f"{r.cost:g}", ", ".join(r.discharges) or "-"] for r in plan.runs]
+    table = _emit(
+        f"Plan {plan.id[:12]} @ {plan.snapshot_id[:12]}",
+        ["PRODUCER", "SUBJECT", "COST", "DISCHARGES"],
+        rows,
+        [],
+    )
+    budget = "-" if plan.budget is None else f"{plan.budget:g}"
+    lines = [
+        table,
+        f"planner {plan.planner}  objective {plan.objective}  budget {budget}  solver {plan.solver_status}",
+        f"total cost {plan.total_cost:g}  runs {len(plan.runs)}",
+        f"restores: {', '.join(sorted(plan.chosen_clauses)) or '-'}",
+        f"unrestorable: {', '.join(plan.unrestorable) or '-'}",
+        f"deferred: {', '.join(plan.deferred) or '-'}",
+    ]
+    return "\n".join(ln for ln in lines if ln)
+
+
+def render_jobs(jobs: Sequence[Job]) -> str:
+    rows = [
+        [
+            j.payload["producer_id"],
+            j.payload["subject_id"],
+            j.state.value.upper(),
+            str((j.result or {}).get("error", "-")),
+        ]
+        for j in jobs
+    ]
+    return _emit("Jobs", ["PRODUCER", "SUBJECT", "STATE", "ERROR"], rows, [])

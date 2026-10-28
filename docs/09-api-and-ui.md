@@ -8,8 +8,8 @@
 | `reval snapshot [--write] [--check]` | Compute the working-tree snapshot and store it. `--write` writes `reval.lock.json` (ADR 0005). `--check` exits 1 if the committed lock differs from the live state. |
 | `reval status [--rev REV] [--claim ID] [--format table\|json]` | Assess all claims |
 | `reval diff A [B] [--format table\|json\|markdown]` | Change set + affected claims + freshness classes between two revisions (reads `reval.lock.json` via `git show`). One revision compares it to the working tree. `markdown` is used for PR comments. |
-| `reval plan [--budget N] [--planner ilp\|greedy\|all]` | Compute a revalidation plan for the current snapshot |
-| `reval run [--all \| --plan ID] [--only PRODUCER]` | Execute producers (`--all`: every producer × subject; `--plan`: a stored plan's runs), store evidence append-only, re-assess |
+| `reval plan [--budget N] [--planner ilp\|greedy\|all] [--format table\|json]` | Compute and store (append-only) a revalidation plan for the current snapshot. `--budget` switches to the max-restored objective. |
+| `reval run [--all \| --plan ID\|latest] [--only PRODUCER]` | Execute producers (`--all`: every producer × subject; `--plan`: a stored plan's runs), store evidence append-only, re-assess |
 | `reval explain CLAIM` | Justification tree with reasons (deterministic text) |
 | `reval report [--html] [--out PATH]` | Render the decision-validity report |
 | `reval graph [--claim ID] --out graph.json` | Export the evidence graph |

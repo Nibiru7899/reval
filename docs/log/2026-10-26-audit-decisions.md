@@ -98,3 +98,12 @@ The owner clarified that ReVal is a personal project: no institution, supervisor
   A lost-fail claim with no coverable clause is `unrestorable`, even if the rerun is available. A rerun alone can't guarantee a decided status:
   a PASS could still leave the policy unmet. **Open for P4-11:** plans may add the available reruns of an unrestorable lost-fail claim as an
   *advisory* run (cost counted, claim still listed as unrestorable), so the engineer sees the cheapest way to at least re-check the old failure.
+
+## 2026-10-28 — P4-09..P4-11 (plan, jobs, re-assessment)
+
+- **P1 advisory reruns: not implemented.** Showing the available reruns of an unrestorable lost-fail claim needs a new field on `RevalidationPlan`
+  (a second run list that is costed but never discharges anything), which changes the binding `docs/10` §2 model and the plan id, and every consumer
+  (report, API, UI) would have to treat advisory runs differently from planned ones. That is not small. The claim stays `unrestorable`, and the user can
+  re-check the old failure with `reval run` on that producer and subject. Revisit if the report (P4-12) needs it.
+- **I6 decided statuses:** the property accepts SUPPORTED or WAIVED. A claim that carries a waiver ends WAIVED once its lost FAIL is superseded, because the lost-fail rule outranks the waiver (S1).
+- `reval run --only P` without `--plan` uses the latest stored plan; `--plan` runs only against the snapshot the plan was made for (otherwise exit 3).
