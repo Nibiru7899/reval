@@ -28,52 +28,52 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 
 | ID | Title | Owner | Depends on | Status |
 |---|---|---|---|---|
-| P0-01 | Tooling remainder: data-marker skip hook | sonnet | — | todo |
-| P0-02 | Repo hygiene: PR and issue templates | sonnet | — | todo |
+| P0-01 | Tooling remainder: data-marker skip hook | sonnet | — | done |
+| P0-02 | Repo hygiene: PR and issue templates | sonnet | — | done |
 | P0-03 | Dataset license check and download (no token) | human | — | done |
-| P0-04 | Prior-art review | human | — | todo |
-| P0-05 | EDA functions and notebook | sonnet+human-review | P1-01 | todo |
-| P0-06 | Choose declared limits | human | P0-05, P1-02 | todo |
-| P0-07 | Scope checkpoint | human | P0-04 | todo |
+| P0-04 | Prior-art review | human | — | review |
+| P0-05 | EDA functions and notebook | sonnet+human-review | P1-01 | review |
+| P0-06 | Choose declared limits | human | P0-05, P1-02 | review |
+| P0-07 | Scope checkpoint | human | P0-04 | review |
 
 ## Phase 1 — Motor domain ([phase-1-motor.md](phase-1-motor.md))
 
 | ID | Title | Owner | Depends on | Status |
 |---|---|---|---|---|
-| P1-01 | Download, validate, convert to parquet | sonnet | P0-01, P2-01 | todo |
-| P1-02 | Profile-level splits | sonnet+human-review | P1-01 | todo |
-| P1-03 | Feature engineering (derived + EWMA) | sonnet | P1-01 | todo |
-| P1-04 | Trajectory models M1–M3 + peak evaluation harness | sonnet | P1-02, P1-03 | todo |
-| P1-05 | Split-conformal (`reval.uq.conformal`) + motor `PeakConformal` | sonnet | P1-04 | todo |
-| P1-06 | Applicability domain (`reval.uq.domain`) | sonnet | P1-05, P2-01 | todo |
-| P1-07 | 4-node LPTN simulator + cooling parameters | sonnet | P1-03 | todo |
-| P1-08 | LPTN identification + model-form band | sonnet | P1-07, P1-02 | todo |
-| P1-09 | Drive map | sonnet | P1-03, P1-06 | todo |
-| P1-10 | Duty-cycle generator + subject library | sonnet | P1-02, P1-03 | todo |
+| P1-01 | Download, validate, convert to parquet | sonnet | P0-01, P2-01 | done |
+| P1-02 | Profile-level splits | sonnet+human-review | P1-01 | review |
+| P1-03 | Feature engineering (derived + EWMA) | sonnet | P1-01 | done |
+| P1-04 | Trajectory models M1–M3 + peak evaluation harness | sonnet | P1-02, P1-03 | done |
+| P1-05 | Split-conformal (`reval.uq.conformal`) + motor `PeakConformal` | sonnet | P1-04 | done |
+| P1-06 | Applicability domain (`reval.uq.domain`) | sonnet | P1-05, P2-01 | done |
+| P1-07 | 4-node LPTN simulator + cooling parameters | sonnet | P1-03 | done |
+| P1-08 | LPTN identification + model-form band | sonnet | P1-07, P1-02 | done |
+| P1-09 | Drive map | sonnet | P1-03, P1-06 | done |
+| P1-10 | Duty-cycle generator + subject library | sonnet | P1-02, P1-03 | done |
 | P1-11 | Design optimizer O1/O2/O3 | sonnet | P1-05, P1-06, P1-09, P1-10 | todo |
 | P1-12 | M1 milestone reproduction script | sonnet | P0-03, P0-06, P1-01, P1-02, P1-03, P1-04, P1-05, P1-06, P1-07, P1-08, P1-09, P1-10, P1-11, P1-13 | todo |
-| P1-13 | Calibration script: uq artifacts per model | sonnet | P1-05, P1-06 | todo |
+| P1-13 | Calibration script: uq artifacts per model | sonnet | P1-05, P1-06 | done |
 
 ## Phase 2 — Core engine ([phase-2-core.md](phase-2-core.md))
 
 | ID | Title | Owner | Depends on | Status |
 |---|---|---|---|---|
-| P2-01 | Domain base, intervals, canonical JSON, errors | sonnet | P0-01 | todo |
-| P2-02 | Selectors, artifacts, engineering entities | sonnet | P2-01 | todo |
-| P2-03 | Snapshot, changes, assessment, plan models + `core/selectors.py` | sonnet | P2-14 | todo |
-| P2-04 | Hashers (`reval.hashing`) | sonnet | P2-03 | todo |
-| P2-05 | Manifest schema + loader with units + fixture project | sonnet | P2-03 | todo |
-| P2-06 | Producer SDK: decorator, registry, context, code hash | sonnet | P2-05 | todo |
-| P2-07 | Evidence graph (E1) | sonnet | P2-15 | todo |
-| P2-08 | Verdicts (E3 part 1) | sonnet | P2-03 | todo |
-| P2-09 | Claim status (E3 part 2) + `assess_all` | sonnet | P2-08 | todo |
-| P2-10 | SQL store (document tables) | sonnet | P2-03 | todo |
+| P2-01 | Domain base, intervals, canonical JSON, errors | sonnet | P0-01 | done |
+| P2-02 | Selectors, artifacts, engineering entities | sonnet | P2-01 | done |
+| P2-03 | Snapshot, changes, assessment, plan models + `core/selectors.py` | sonnet | P2-14 | done |
+| P2-04 | Hashers (`reval.hashing`) | sonnet | P2-03 | done |
+| P2-05 | Manifest schema + loader with units + fixture project | sonnet | P2-03 | done |
+| P2-06 | Producer SDK: decorator, registry, context, code hash | sonnet | P2-05 | done |
+| P2-07 | Evidence graph (E1) | sonnet | P2-15 | done |
+| P2-08 | Verdicts (E3 part 1) | sonnet | P2-03 | done |
+| P2-09 | Claim status (E3 part 2) + `assess_all` | sonnet | P2-08 | done |
+| P2-10 | SQL store (document tables) | sonnet | P2-03 | done |
 | P2-11 | Project service + lock file (no git) | sonnet | P2-09, P2-10, P2-15 | todo |
 | P2-12 | Property tests I1, I2, I4 + core coverage gate | sonnet | P2-09, P2-11 | todo |
 | P2-13 | Motor manifest wiring (non-ML producers) | sonnet+human-review | P0-06, P1-08, P1-09, P1-10, P2-18 | todo |
-| P2-14 | Evidence, producers, policies | sonnet | P2-02 | todo |
-| P2-15 | Producer runner | sonnet | P2-16 | todo |
-| P2-16 | Snapshot builder | sonnet | P2-04, P2-05, P2-06 | todo |
+| P2-14 | Evidence, producers, policies | sonnet | P2-02 | done |
+| P2-15 | Producer runner | sonnet | P2-16 | done |
+| P2-16 | Snapshot builder | sonnet | P2-04, P2-05, P2-06 | done |
 | P2-17 | CLI: `snapshot` and `status` | sonnet | P2-11 | todo |
 | P2-18 | CLI: `run --all` | sonnet | P2-17 | todo |
 
