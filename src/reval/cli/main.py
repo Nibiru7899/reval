@@ -13,7 +13,7 @@ import typer
 from reval import __version__
 from reval.cli import render
 from reval.core.graph import EvidenceGraph
-from reval.errors import LockNotFoundError, RevalError
+from reval.errors import LockNotFoundError, MissingExtraError, RevalError
 from reval.gitio import LOCK_FILE, read_lock, snapshot_at_rev
 from reval.gitio.git import repo_subdir
 from reval.services import Project
@@ -334,3 +334,62 @@ def explain(
     assessments = proj.assess(snap)
     evidence = {e.id: e for e in proj.store.list_evidence()}
     typer.echo(explain_claim(snap, assessments[claim], evidence, claim), nl=False)
+
+
+@app.command()
+@_guard
+def serve(
+    project: ProjectOpt = Path(),
+    host: Annotated[str, typer.Option("--host", help="Bind address.")] = "127.0.0.1",
+    port: Annotated[int, typer.Option("--port", help="Bind port.")] = 8000,
+) -> None:
+    """Start the API (and the web UI once built) for the project, on localhost by default."""
+    import os
+
+    try:
+        import fastapi  # noqa: F401
+        import uvicorn
+    except ImportError as exc:
+        raise MissingExtraError("server") from exc
+    from reval.api import ApiSettings, create_app
+
+    root = project.resolve()
+    os.environ["REVAL_PROJECT_ROOT"] = str(root)
+    uvicorn.run(create_app(ApiSettings(project_root=root)), host=host, port=port)
+
+
+@app.command("api-schema")
+@_guard
+def api_schema(
+    out: Annotated[Path, typer.Option("--out", help="Where to write the OpenAPI JSON.")] = Path(
+        "openapi.json"
+    ),
+) -> None:
+    """Write the OpenAPI schema (input to the generated TypeScript client)."""
+    try:
+        from reval.api import ApiSettings, create_app
+    except ImportError as exc:
+        raise MissingExtraError("server") from exc
+
+    spec = create_app(ApiSettings(project_root=Path().resolve())).openapi()
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(json.dumps(spec, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
+    typer.echo(f"wrote {out}")
+
+
+db_app = typer.Typer(help="Database maintenance.", no_args_is_help=True)
+app.add_typer(db_app, name="db")
+
+
+@db_app.command("upgrade")
+@_guard
+def db_upgrade(
+    project: ProjectOpt = Path(),
+    revision: Annotated[str, typer.Option("--revision", help="Target revision.")] = "head",
+) -> None:
+    """Apply Alembic migrations to REVAL_DATABASE_URL (default: the project's SQLite store)."""
+    from reval.store.migrate import upgrade
+    from reval.store.sql_store import database_url
+
+    upgrade(database_url(project.resolve()), revision)
+    typer.echo(f"database is at {revision}")

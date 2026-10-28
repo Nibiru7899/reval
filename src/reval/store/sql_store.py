@@ -298,11 +298,16 @@ class SqlStore:
         self._engine.dispose()
 
 
-def open_store(project_root: Path) -> SqlStore:
-    """Open the project's store: ``REVAL_DATABASE_URL`` or ``<root>/.reval/reval.db`` (SQLite)."""
+def database_url(project_root: Path) -> str:
+    """``REVAL_DATABASE_URL`` or ``<root>/.reval/reval.db`` (SQLite; the directory is created)."""
     url = os.environ.get("REVAL_DATABASE_URL")
-    if not url:
-        d = project_root / ".reval"
-        d.mkdir(parents=True, exist_ok=True)
-        url = f"sqlite:///{(d / 'reval.db').as_posix()}"
-    return SqlStore(url)
+    if url:
+        return url
+    d = project_root / ".reval"
+    d.mkdir(parents=True, exist_ok=True)
+    return f"sqlite:///{(d / 'reval.db').as_posix()}"
+
+
+def open_store(project_root: Path) -> SqlStore:
+    """Open the project's store (see ``database_url``)."""
+    return SqlStore(database_url(project_root))
