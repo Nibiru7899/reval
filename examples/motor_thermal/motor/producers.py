@@ -15,7 +15,7 @@ import reval
 from motor import cycles, lptn
 from motor.features import add_derived
 from reval.domain.engineering import Subject, SubjectKind
-from reval.domain.evidence import EvidenceResult
+from reval.domain.evidence import EvidenceResult, Tolerance
 from reval.errors import ProducerError
 from reval.sdk import Context, ProducerOutput, exact_result, interval_result
 
@@ -85,6 +85,12 @@ def _lptn_params(ctx: Context) -> lptn.LPTNParams:
     return lptn._from_flat(flat)
 
 
+def _tolerances(ctx: Context) -> tuple[Tolerance, ...]:
+    """Tolerances from params/tolerances.yaml (scripts/sensitivities.py), sorted for determinism."""
+    entries = ctx.load("tolerances")["tolerances"]
+    return tuple(sorted((Tolerance.model_validate(e) for e in entries), key=lambda t: t.selector))
+
+
 def _point_only(quantity: str, unit: str, point: float, report: dict[str, Any]) -> EvidenceResult:
     """Out-of-domain result: no interval, so the verdict is INCONCLUSIVE (fail closed)."""
     return EvidenceResult(
@@ -109,6 +115,7 @@ def _point_only(quantity: str, unit: str, point: float, report: dict[str, Any]) 
         "lptn#/loss",
         "drive_map",
         "cooling#/flow_scale",
+        "tolerances",
         "lptn_report#/model_form_band_K",
         _CYCLE_COLUMNS,
         _STATE_COLUMNS,
@@ -148,7 +155,7 @@ def lptn_sim(subject: Subject, ctx: Context) -> ProducerOutput:
                 domain_report=report,
             )
         )
-    return ProducerOutput(results=tuple(results))
+    return ProducerOutput(results=tuple(results), tolerances=_tolerances(ctx))
 
 
 @reval.producer(

@@ -17,6 +17,8 @@ artifacts:
   # Model-form bands (K, per length class) written by scripts/calibrate_lptn.py next to the fit.
   lptn_report: {kind: params, path: models/lptn_report.json, hasher: yaml-fields, derived_from: [measures, splits, lptn]}
   cooling:     {kind: params, path: params/cooling.yaml}
+  # Sensitivity tolerances written by scripts/sensitivities.py; lptn_sim attaches them to its evidence.
+  tolerances:  {kind: params, path: params/tolerances.yaml}
   limits:      {kind: params, path: params/limits.yaml}
   shaft:       {kind: params, path: params/shaft.yaml}
 
@@ -25,6 +27,16 @@ assumptions:
   A-sensor-pm: {statement: "Magnet temperature telemetry uncertainty (half-width)", variable: pm_sensor_uncertainty, unit: K, value: 2.0}
   A-sensor-sw: {statement: "Stator winding temperature sensor uncertainty (half-width)", variable: sw_sensor_uncertainty, unit: K, value: 2.0}
   A-flow-sens: {statement: "Peak temperature sensitivity to flow_scale is bounded over 0.7-1.3", variable: flow_scale, unit: dimensionless, bounds: [0.7, 1.3]}
+  A-sens-C-pm: {statement: "Peak temperature sensitivity to /C/pm is bounded over its grid", variable: "/C/pm", unit: "J/K", bounds: [11908.2, 17862.3]}
+  A-sens-C-sy: {statement: "Peak temperature sensitivity to /C/sy is bounded over its grid", variable: "/C/sy", unit: "J/K", bounds: [6178.48, 9267.72]}
+  A-sens-C-st: {statement: "Peak temperature sensitivity to /C/st is bounded over its grid", variable: "/C/st", unit: "J/K", bounds: [800, 1200]}
+  A-sens-C-sw: {statement: "Peak temperature sensitivity to /C/sw is bounded over its grid", variable: "/C/sw", unit: "J/K", bounds: [3599.61, 5399.42]}
+  A-sens-R-sw_st: {statement: "Peak temperature sensitivity to /R/sw_st is bounded over its grid", variable: "/R/sw_st", unit: "K/W", bounds: [0.0108294, 0.0162441]}
+  A-sens-R-st_sy: {statement: "Peak temperature sensitivity to /R/st_sy is bounded over its grid", variable: "/R/st_sy", unit: "K/W", bounds: [0.00800145, 0.0120022]}
+  A-sens-R-sy_c: {statement: "Peak temperature sensitivity to /R/sy_c is bounded over its grid", variable: "/R/sy_c", unit: "K/W", bounds: [0.00967569, 0.0145135]}
+  A-sens-R-pm_st: {statement: "Peak temperature sensitivity to /R/pm_st is bounded over its grid", variable: "/R/pm_st", unit: "K/W", bounds: [0.054442, 0.081663]}
+  A-sens-R-pm_amb: {statement: "Peak temperature sensitivity to /R/pm_amb is bounded over its grid", variable: "/R/pm_amb", unit: "K/W", bounds: [0.178506, 0.267759]}
+  A-sens-R-sw_amb: {statement: "Peak temperature sensitivity to /R/sw_amb is bounded over its grid", variable: "/R/sw_amb", unit: "K/W", bounds: [0.270953, 0.40643]}
 
 requirements:
   R-PM-MAX:  {text: "Magnet temperature stays at or below the declared study limit", quantity: pm_peak, op: "<=", limit: 90, unit: degC, criticality: high}
