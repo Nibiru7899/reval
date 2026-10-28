@@ -94,3 +94,7 @@ The owner clarified that ReVal is a personal project: no institution, supervisor
 - **F4 (diff):** any change to an existing producer, or a producer added or removed, is `PRODUCER_CODE_CHANGED` (with `detail`). A unit change
   of a quantity is `UNKNOWN quantity:<q>`. A change to an artifact definition is `ARTIFACT_CHANGED`. A version change nothing explains is `UNKNOWN`.
 - **S1 (status):** the lost-fail STALE rule comes before WAIVED, so a waiver can't hide a lost FAIL (I4).
+- **P1 (planner, P4-05 to P4-08):** rerun obligations are keyed `rerun:<producer>@<subject>` and shared by every claim that lost a FAIL there.
+  A lost-fail claim with no coverable clause is `unrestorable`, even if the rerun is available. A rerun alone can't guarantee a decided status:
+  a PASS could still leave the policy unmet. **Open for P4-11:** plans may add the available reruns of an unrestorable lost-fail claim as an
+  *advisory* run (cost counted, claim still listed as unrestorable), so the engineer sees the cheapest way to at least re-check the old failure.
