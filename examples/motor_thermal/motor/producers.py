@@ -6,6 +6,9 @@ Every artifact a producer touches is declared in ``depends_on`` (fail closed: re
 
 from __future__ import annotations
 
+import json
+import os
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -176,8 +179,15 @@ def bench_measure(subject: Subject, ctx: Context) -> ProducerOutput:
     nominal bench flow, so a changed ``flow_scale`` makes the measurement stale instead of reusable.
     """
     p = subject.params
-    temps = cycles.recorded_temperatures(
-        int(p["profile_id"]), float(p["start_s"]), float(p["duration_s"]), ctx.load("measures")
+    # Tier B (simulated plant): peaks come from a deliberately undeclared table, the "physical world".
+    table_path = os.environ.get("REVAL_BENCH_MEASUREMENTS")
+    table = json.loads(Path(table_path).read_text(encoding="utf-8")) if table_path else None
+    temps = (
+        None
+        if table is not None
+        else cycles.recorded_temperatures(
+            int(p["profile_id"]), float(p["start_s"]), float(p["duration_s"]), ctx.load("measures")
+        )
     )
     sensor_k = {
         "pm_peak": ctx.assumption("A-sensor-pm").value,
@@ -188,7 +198,13 @@ def bench_measure(subject: Subject, ctx: Context) -> ProducerOutput:
         half = sensor_k[quantity]
         if half is None or half <= 0.0:
             raise ProducerError(f"sensor uncertainty for {quantity} must be a positive value (fail closed)")
-        peak = float(temps[node].max())
+        if table is not None:
+            if subject.id not in table:
+                raise ProducerError(f"no bench measurement for subject {subject.id} (fail closed)")
+            peak = float(table[subject.id][quantity])
+        else:
+            assert temps is not None
+            peak = float(temps[node].max())
         results.append(
             interval_result(
                 quantity, "degC", peak, peak - half, peak + half, uncertainty_kind="sensor", in_domain=True
@@ -279,6 +295,22 @@ def _ml_features(
     return make_features(frame)[0], cycle, report
 
 
+# One ApplicabilityDomain per (artifact id, content hash) per process: rebuilding it from the 200k-row
+# standardized store dominates a producer run. Without a known hash nothing is cached (fail closed).
+_AD_CACHE: dict[tuple[str, str], ApplicabilityDomain] = {}
+
+
+def _applicability_domain(ctx: Context, artifact_id: str, uq: Any) -> ApplicabilityDomain:
+    chash = getattr(ctx, "content_hash", lambda _a: None)(artifact_id)
+    if chash is None:
+        return ApplicabilityDomain.from_dict(uq["ad"])
+    key = (artifact_id, chash)
+    ad = _AD_CACHE.get(key)
+    if ad is None:
+        ad = _AD_CACHE[key] = ApplicabilityDomain.from_dict(uq["ad"])
+    return ad
+
+
 def _check_model_domain(ad: ApplicabilityDomain, x: np.ndarray) -> DomainReport:
     """Strict AD check of every row: range box and kNN distance (fail closed, docs/04 A4).
 
@@ -291,12 +323,13 @@ def _check_model_domain(ad: ApplicabilityDomain, x: np.ndarray) -> DomainReport:
 def _predict_peak(subject: Subject, ctx: Context, quantity: str, model_kind: str) -> ProducerOutput:
     prefix, target = _ML_TARGET[quantity]
     model = ctx.load(f"{prefix}_{model_kind}")
-    uq = ctx.load(f"uq_{prefix}_{model_kind}")
+    uq_id = f"uq_{prefix}_{model_kind}"
+    uq = ctx.load(uq_id)
     drive_map = ctx.load("drive_map")
     feats, cycle, dm_report = _ml_features(subject, ctx, drive_map)
     pred = model.predict(feats)[target].to_numpy(dtype=float)
     peak = float(pred.max())
-    ad = ApplicabilityDomain.from_dict(uq["ad"])
+    ad = _applicability_domain(ctx, uq_id, uq)
     model_report = _check_model_domain(ad, feats[model.feature_names].to_numpy(dtype=float))
     combined = combine_reports({"drive_map": dm_report, "model": model_report})
     inside = bool(combined["inside"])

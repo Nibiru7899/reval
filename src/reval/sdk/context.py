@@ -1,6 +1,7 @@
 """Execution context handed to producers; enforces declared dependencies (docs/10 §7, D11)."""
 
 import json
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any
 
@@ -36,6 +37,23 @@ def _pointer_get(doc: Any, pointer: str) -> Any:
 def _prefix_covers(dep_pointer: str, requested: str) -> bool:
     d, r = dep_pointer.split("/")[1:], requested.split("/")[1:]
     return len(d) <= len(r) and r[: len(d)] == d
+
+
+# In-process cache of heavy artifact reads (models, tables). The key carries the snapshot's content hash AND
+# the file's size and mtime, so a changed artifact is never served stale; no recorded hash means no caching.
+_CACHE_MAX = 16
+_CACHE: OrderedDict[tuple[Any, ...], Any] = OrderedDict()
+_CACHEABLE = (".joblib", ".pkl", ".parquet", ".csv")
+
+
+def clear_artifact_cache() -> None:
+    """Drop every cached artifact (tests, long-lived processes)."""
+    _CACHE.clear()
+
+
+def _share(obj: Any) -> Any:
+    """Frames are handed out as fresh copy-on-write shells so callers cannot mutate the cached one."""
+    return obj.copy(deep=False) if hasattr(obj, "copy") and hasattr(obj, "columns") else obj
 
 
 class Context:
@@ -77,7 +95,27 @@ class Context:
             declared = {c for d in deps for c in d.columns}
             key = self._snapshot.artifacts[artifact_id].key
             columns = tuple(sorted(declared | set(key)))
-        return self._read(self._artifact_path(artifact_id), columns)
+        path = self._artifact_path(artifact_id)
+        chash = self.content_hash(artifact_id)
+        if chash is None or path.suffix.lower() not in _CACHEABLE or not path.exists():
+            return self._read(path, columns)
+        st = path.stat()
+        ckey = (str(path.resolve()), chash, st.st_size, st.st_mtime_ns, columns)
+        if ckey in _CACHE:
+            _CACHE.move_to_end(ckey)
+            return _share(_CACHE[ckey])
+        value = self._read(path, columns)
+        _CACHE[ckey] = value
+        while len(_CACHE) > _CACHE_MAX:
+            _CACHE.popitem(last=False)
+        return _share(value)
+
+    def content_hash(self, artifact_id: str) -> str | None:
+        """Content hash of an artifact in this snapshot; None if unknown or missing (never cache then)."""
+        v = self._snapshot.versions.get(artifact_id)
+        if v is None or v.content_hash == "missing":
+            return None
+        return v.content_hash
 
     @staticmethod
     def _read(path: Path, columns: tuple[str, ...] | None) -> Any:
