@@ -156,3 +156,18 @@ Conventions: see the header of `phase-0-foundations.md`. Tests use the mini proj
 - **Files:** `examples/motor_thermal/demo_full.sh`, `examples/motor_thermal/demo_full.ps1`, `tests/integration/test_demo_full.py`
 - **Spec:** scripted: baseline snapshot + `run --all` → commit a coolant change → `reval diff HEAD~1 HEAD` → `plan` → `run --plan latest` → `report --html`.
 - **Acceptance:** `tests/integration/test_demo_full.py` (marked `data` and `slow`) runs the script and asserts exit 0 and that the HTML report exists. NEEDS HUMAN: check the report wording and numbers, then update the M4 status in `docs/07-roadmap.md`.
+
+## P4-17 — Decisiveness-aware planning (expected cost)
+- **Owner:** sonnet · **Depends on:** P4-11, P4-15 · **Read first:** `docs/04` A7 (sequential / expected-cost variant), `docs/10` §4.6, `docs/log/2026-10-28-m4.md`
+- **Files:** `src/reval/core/planner.py`, `src/reval/domain/plan.py` (if a field is needed), `src/reval/services/project.py`, `docs/04-algorithms.md`, `docs/10-interfaces.md`, tests in `tests/unit/core/test_planner_decisive.py`
+- **Why:** the M4 demo planned 5 cheap runs whose results were all INCONCLUSIVE, so nothing was restored. The ILP assumed every planned run is decisive.
+- **Spec:**
+  - Each candidate run gets a deterministic decisiveness estimate p ∈ (0, 1], computed from the most recent prior evidence of the same (producer, subject, quantity), whatever its freshness:
+    - no prior evidence → p = 1;
+    - prior evidence decisive (PASS/FAIL) → p = 1;
+    - prior evidence inconclusive because it was out of domain → p = p_ood (default 0.05), unless the change set touches an artifact in that producer's dependencies (then p = 0.5);
+    - prior evidence inconclusive by margin → p = clip(|center − L| / half-width, p_min = 0.05, 1).
+  - The ILP minimizes the expected cost Σ cost_j / p_j. The budgeted variant keeps the true cost in the budget constraint.
+  - Every `PlannedRun` reports `p_decisive`.
+  - The prior evidence passes into `PlanningProblem` through the service, so core stays pure and deterministic.
+- **Acceptance:** on a synthetic case like the demo (ML and physics previously inconclusive by a wide margin, measurement available at cost 100), the plan chooses the measurement. With no prior evidence, plans are unchanged (existing tests still pass). Brute force still matches on random instances (fix p per candidate).

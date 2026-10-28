@@ -88,7 +88,7 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | P3-05 | Tolerance carry-forward + I5 | sonnet | P3-03 | done |
 | P3-06 | Wire freshness into `Project.assess` + `reval diff` claim section | sonnet | P3-02, P3-04, P3-05 | done |
 | P3-07 | LPTN sensitivity estimation → tolerances | sonnet+human-review | P3-05, P1-08, P2-13 | review |
-| P3-08 | Interim demo script | sonnet | P3-06, P3-07 | todo |
+| P3-08 | Interim demo script | sonnet | P3-06, P3-07 | done |
 | P3-09 | `reval diff --format markdown` | sonnet | P3-06 | done |
 | P3-10 | Property tests I3 and I7 | sonnet | P3-06, P2-12 | done |
 
@@ -110,23 +110,24 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | P4-12 | Canonical report JSON | sonnet | P4-11 | done |
 | P4-13 | Markdown + HTML rendering, `reval report` | sonnet | P4-12 | done |
 | P4-14 | `reval explain CLAIM` | sonnet | P4-12 | done |
-| P4-15 | M4 demo script + review | sonnet+human-review | P4-03, P4-13, P4-14, P3-08 | todo |
-| P4-16 | `reval init` and `reval graph` | sonnet | P2-17, P2-07 | todo |
+| P4-15 | M4 demo script + review | sonnet+human-review | P4-03, P4-13, P4-14, P3-08 | review |
+| P4-16 | `reval init` and `reval graph` | sonnet | P2-17, P2-07 | done |
+| P4-17 | Decisiveness-aware planning (expected cost) | sonnet | P4-11, P4-15 | todo |
 
 ## Phase 5 — ReValBench ([phase-5-bench.md](phase-5-bench.md))
 
 | ID | Title | Owner | Depends on | Status |
 |---|---|---|---|---|
 | P5-01 | Pre-registration (HUMAN GATE) | human | P5-17 | todo |
-| P5-00 | Producer performance (in-process artifact and AD caches) | sonnet | P4-03 | todo |
-| P5-02 | Bench harness: throwaway clones + scenario commits | sonnet | P3-06, P4-10, P5-00 | todo |
+| P5-00 | Producer performance (in-process artifact and AD caches) | sonnet | P4-03 | done |
+| P5-02 | Bench harness: throwaway clones + scenario commits | sonnet | P3-06, P4-10, P5-00 | done |
 | P5-03 | Scenario model + generator, Tier A part 1 (T1–T5) | sonnet | P5-02, P4-03 | todo |
 | P5-04 | Tier A part 2 (T6, T10, T11) | sonnet | P5-03 | todo |
-| P5-05 | Tier B virtual world model | sonnet+human-review | P1-08 | todo |
+| P5-05 | Tier B virtual world model | sonnet+human-review | P1-08 | review |
 | P5-06 | Tier B scenarios (T6-B, T7, T8, T9, T12) | sonnet | P5-18, P5-04 | todo |
-| P5-07 | Evidence oracle (B0 rerun-all) | sonnet | P5-02 | todo |
+| P5-07 | Evidence oracle (B0 rerun-all) | sonnet | P5-02 | done |
 | P5-08 | Truth oracles | sonnet | P5-05, P5-07 | todo |
-| P5-09 | Baselines B1–B4 | sonnet | P5-07 | todo |
+| P5-09 | Baselines B1–B4 | sonnet | P5-07 | done |
 | P5-10 | Metrics | sonnet | P5-07, P5-08, P5-09 | todo |
 | P5-11 | Runner, cache, smoke config | sonnet | P5-10, P5-04, P5-06 | todo |
 | P5-12 | Statistics: stratified cluster bootstrap + non-inferiority | sonnet | P5-10 | todo |
@@ -135,7 +136,7 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | P5-15 | Figures and tables (scripted) | sonnet | P5-12, P5-13, P5-19, P5-14, P5-20 | todo |
 | P5-16 | Final run + archive (HUMAN REVIEW) | sonnet+human-review | P5-01, P5-15 | todo |
 | P5-17 | Pilot run on development seeds | sonnet+human-review | P5-11, P5-12, P5-13, P5-19, P5-14, P5-20 | todo |
-| P5-18 | Tier B base snapshots: ML retrained on world trajectories | sonnet | P5-05, P4-03 | todo |
+| P5-18 | Tier B base snapshots: ML retrained on world trajectories | sonnet | P5-05, P4-03 | done |
 | P5-19 | Uncertainty and AD ablations (A4, A5, A8) | sonnet | P5-13, P4-01 | todo |
 | P5-20 | RQ4 optimizer experiment (Tier B, 2 × 2) | sonnet | P5-08, P5-18, P1-11 | todo |
 
