@@ -61,6 +61,10 @@ class ProducerRegistry:
             raise ValueError(f"duplicate producer id {rp.meta.id!r}")
         self._items[rp.meta.id] = rp
 
+    def clear(self) -> None:
+        """Forget every producer (used when a project is re-opened in the same process)."""
+        self._items.clear()
+
     def get(self, producer_id: str) -> RegisteredProducer:
         try:
             return self._items[producer_id]
