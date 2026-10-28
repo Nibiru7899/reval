@@ -82,3 +82,15 @@ The owner clarified that ReVal is a personal project: no institution, supervisor
 - The pre-registration is published as a public tag (`prereg-v1`, optionally OSF) before the final run.
 - The paper, preprint, demo video and talk slides are optional. The license is the owner's choice (Apache-2.0 recommended for code; the data stays CC BY-SA 4.0).
 - The usability study stays optional, with informed consent and anonymity.
+
+## 2026-10-28 — implementation rulings (freshness, P3-01 to P3-05)
+
+- **F1:** the exact shortcut also refuses on a producer change (rule c) and an upstream change (rule f). Field hashes are own-only, so without
+  this a pointer dependency on a derived artifact would stay FRESH_EXACT after an upstream change (D3).
+- **F2:** a row or field excuse holds only if every dependency the change touches qualifies. A change that also reaches the evidence through a
+  whole-artifact dependency or rule (f) is not excused.
+- **F3:** a dependency hash that changed with no matching change, a code hash that differs from provenance, mismatched inputs, or an unparseable
+  dependency all invalidate. When several tolerances apply to one field, all must be in range, and the largest contribution is used.
+- **F4 (diff):** any change to an existing producer, or a producer added or removed, is `PRODUCER_CODE_CHANGED` (with `detail`). A unit change
+  of a quantity is `UNKNOWN quantity:<q>`. A change to an artifact definition is `ARTIFACT_CHANGED`. A version change nothing explains is `UNKNOWN`.
+- **S1 (status):** the lost-fail STALE rule comes before WAIVED, so a waiver can't hide a lost FAIL (I4).
