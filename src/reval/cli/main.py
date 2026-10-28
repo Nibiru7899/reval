@@ -270,3 +270,67 @@ def graph(
     body = g.to_json(f"claim:{claim}" if claim is not None else None)
     out.write_text(json.dumps(body, indent=2, sort_keys=True) + "\n", encoding="utf-8", newline="\n")
     typer.echo(f"wrote {out} ({len(body['nodes'])} nodes, {len(body['edges'])} edges)")
+
+
+def _utf8_stdout() -> None:
+    # Reports carry non-ASCII status icons; a legacy console codepage must not crash the command.
+    with contextlib.suppress(AttributeError, ValueError):
+        sys.stdout.reconfigure(encoding="utf-8")  # type: ignore[union-attr]
+
+
+@app.command()
+@_guard
+def report(
+    project: ProjectOpt = Path(),
+    html: Annotated[bool, typer.Option("--html", help="Self-contained HTML instead of Markdown.")] = False,
+    json_: Annotated[bool, typer.Option("--json", help="Canonical report JSON.")] = False,
+    out: Annotated[Path | None, typer.Option("--out", help="Write here instead of stdout.")] = None,
+    since: Annotated[
+        str | None, typer.Option("--since", help="Git revision; adds the changes since it to the report.")
+    ] = None,
+) -> None:
+    """Render the decision-validity report: recorded evidence against declared requirements."""
+    from reval.core.diff import diff_snapshots
+    from reval.report import build_report
+    from reval.report.render import render_html, render_markdown
+
+    if html and json_:
+        raise RevalError("--html and --json are mutually exclusive")
+    proj = Project.open(project)
+    snap = proj.snapshot()
+    changes = None
+    if since is not None:
+        repo_root, subdir = repo_subdir(proj.root)
+        changes = diff_snapshots(snapshot_at_rev(repo_root, since, subdir), snap)
+    rep = build_report(proj, changes=changes, snapshot=snap)
+    if json_:
+        text = rep.model_dump_json(indent=2) + "\n"
+    elif html:
+        text = render_html(rep)
+    else:
+        text = render_markdown(rep)
+    if out is not None:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_bytes(text.encode("utf-8"))
+        typer.echo(f"wrote {out} (report {rep.report_id})")
+    else:
+        _utf8_stdout()
+        typer.echo(text, nl=False)
+
+
+@app.command()
+@_guard
+def explain(
+    claim: Annotated[str, typer.Argument(help="Claim id.")],
+    project: ProjectOpt = Path(),
+) -> None:
+    """Justification tree for one claim: status, reasons, clauses, evidence and its dependencies."""
+    from reval.report.explain import explain_claim
+
+    proj = Project.open(project)
+    snap = proj.snapshot()
+    if claim not in snap.claims:
+        raise RevalError(f"unknown claim {claim!r}")
+    assessments = proj.assess(snap)
+    evidence = {e.id: e for e in proj.store.list_evidence()}
+    typer.echo(explain_claim(snap, assessments[claim], evidence, claim), nl=False)
