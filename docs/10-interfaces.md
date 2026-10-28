@@ -541,9 +541,9 @@ Status is **history-free** (D4). There is no `previous` parameter. Assessments f
   Superseded items are ignored by rules 3 and 5, so a rerun can clear a lost fail.
 - **Rules, in order (first match wins):**
   1. **VIOLATED:** any eligible item has verdict FAIL. Reason codes: always `REQUIREMENT_VIOLATED` (the FAIL ids), plus `CONFLICTING_EVIDENCE` if an eligible PASS also exists.
-  2. **WAIVED:** an eligible matching waiver exists. Reason `WAIVER_APPLIED`. Its EvidenceUse has `used_in_clause=True`.
-  3. **STALE (lost fail):** some non-superseded item with policy-eligible kind has `recorded_verdict == FAIL` and is now INVALIDATED, or is CARRY_FORWARD with a current verdict ≠ FAIL.
+  2. **STALE (lost fail):** (checked before waivers, so a waiver can't hide a lost FAIL) some non-superseded item with policy-eligible kind has `recorded_verdict == FAIL` and is now INVALIDATED, or is CARRY_FORWARD with a current verdict ≠ FAIL.
      Reason `EVIDENCE_INVALIDATED` with those ids, and `detail={"lost_fail": true}`.
+  3. **WAIVED:** an eligible matching waiver exists. Reason `WAIVER_APPLIED`. Its EvidenceUse has `used_in_clause=True`.
   4. **SUPPORTED:** some clause is satisfied by fresh eligible PASS evidence (clause matching below). Reason `POLICY_SATISFIED`, with `satisfied_clause = k`.
   5. **STALE:** clause matching succeeds when every non-superseded INVALIDATED item, and every CARRY_FORWARD item, is evaluated at its **recorded** verdict
      (and the assignment uses ≥ 1 such item whose current verdict isn't PASS or which is INVALIDATED). Reason `EVIDENCE_INVALIDATED`, listing those ids.

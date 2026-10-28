@@ -90,7 +90,7 @@ can't be checked in Tier A; it is reported separately from Tier B. The guarantee
 
 ## A6. Claim status (E3)
 
-Direct evaluation of the history-free rules in [03-domain-model.md §3](03-domain-model.md) (VIOLATED → WAIVED → STALE (lost fail) → SUPPORTED → STALE → INCONCLUSIVE).
+Direct evaluation of the history-free rules in [03-domain-model.md §3](03-domain-model.md) (VIOLATED → STALE (lost fail) → WAIVED → SUPPORTED → STALE → INCONCLUSIVE).
 Clause satisfaction with "distinct evidence" and `independent_of` constraints (different kind and disjoint `predictors`) is a tiny bipartite matching problem
 (conjuncts ↔ evidence). Clauses have ≤ 3 conjuncts, so brute force is fine. The STALE rule runs the same matching with non-superseded INVALIDATED items
 and CARRY_FORWARD items treated as fresh at their recorded (un-inflated) verdicts. Every status emits at least one `Reason(code, evidence_ids, detail)`: SUPPORTED → `POLICY_SATISFIED`,

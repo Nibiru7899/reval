@@ -29,3 +29,5 @@ jobs:
         run: mypy src
       - name: Test
         run: pytest -m "not data and not slow" --cov=reval --cov-report=term-missing
+      - name: Core coverage gate
+        run: pytest tests/unit/core tests/property -m "not slow" --cov=reval.core --cov-fail-under=90

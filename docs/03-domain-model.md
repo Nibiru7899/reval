@@ -60,9 +60,9 @@ Definitions (for one claim):
 Rules, evaluated in order. The first rule that matches wins:
 
 1. **VIOLATED.** Some eligible item has verdict FAIL. Fail dominates. If an eligible item also passes, the reason `CONFLICTING_EVIDENCE` is added and an engineer must investigate.
-2. **WAIVED.** An eligible waiver for this claim exists (`WAIVER_APPLIED`).
-3. **STALE (lost fail).** Some non-superseded item of a policy-eligible kind had recorded verdict FAIL and is now INVALIDATED, or was carried forward from FAIL to a non-FAIL verdict.
-   A change must never turn a refuted claim into an accepted one without new evidence (I3, I4).
+2. **STALE (lost fail).** Some non-superseded item of a policy-eligible kind had recorded verdict FAIL and is now INVALIDATED, or was carried forward from FAIL to a non-FAIL verdict.
+   A change must never turn a refuted claim into an accepted one without new evidence (I3, I4). It is checked before waivers, so a waiver can't hide a lost FAIL (ruling 2026-10-28).
+3. **WAIVED.** An eligible waiver for this claim exists (`WAIVER_APPLIED`).
 4. **SUPPORTED.** Some policy clause has every conjunct satisfied by distinct, fresh, eligible PASS evidence that meets the clause's `in_domain`, `min_fidelity` and
    `independent_of` constraints (`POLICY_SATISFIED`, `satisfied_clause = k`).
 5. **STALE.** Not supported now, but a clause *would* be satisfied if every non-superseded INVALIDATED item, and every carried-forward item, were evaluated at its recorded verdict.

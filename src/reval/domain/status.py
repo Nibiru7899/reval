@@ -17,7 +17,7 @@ class Verdict(StrEnum):
 class Status(StrEnum):
     """Claim status.
 
-    Declaration order is NOT the evaluation order; the rules (VIOLATED → WAIVED → STALE (lost fail)
+    Declaration order is NOT the evaluation order; the rules (VIOLATED → STALE (lost fail) → WAIVED
     → SUPPORTED → STALE → INCONCLUSIVE) are in docs/03-domain-model.md §3.
     """
 

@@ -284,9 +284,10 @@ def test_invalidated_waiver_does_not_apply() -> None:
     assert codes(a) == [ReasonCode.NO_EVIDENCE]
 
 
-def test_waiver_beats_lost_fail() -> None:
+def test_lost_fail_beats_waiver() -> None:
+    # Ruling 2026-10-28 (I4): a waiver must not hide a FAIL that a change invalidated.
     a = assess("C-LOW", inv(FAIL("meas")), fx(PASS("waive")))
-    assert a.status is Status.WAIVED
+    assert a.status is Status.STALE
 
 
 # ---------------------------------------------------------------- rule 3: STALE (lost fail)

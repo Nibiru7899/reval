@@ -254,18 +254,8 @@ def assess_claim(
                     detail={"fail_ids": list(_ids(fails)), "pass_ids": list(_ids(passes))},
                 )
             )
-    # Rule 2.
-    elif waivers:
-        status = Status.WAIVED
-        used.update(it.id for it in waivers)
-        reasons.append(
-            Reason(
-                code=ReasonCode.WAIVER_APPLIED,
-                message=f"a waiver for claim {claim.id} is in effect",
-                evidence_ids=_ids(waivers),
-            )
-        )
-    # Rule 3: a change must never turn a refuted claim into an accepted one without new evidence.
+    # Rule 2: a change must never turn a refuted claim into an accepted one without new evidence,
+    # not even through a waiver (I4); so lost fails are checked before waivers.
     elif lost_fails:
         status = Status.STALE
         reasons.append(
@@ -274,6 +264,17 @@ def assess_claim(
                 message="evidence that failed the requirement lost freshness; a rerun is required",
                 evidence_ids=_ids(lost_fails),
                 detail={"lost_fail": True},
+            )
+        )
+    # Rule 3.
+    elif waivers:
+        status = Status.WAIVED
+        used.update(it.id for it in waivers)
+        reasons.append(
+            Reason(
+                code=ReasonCode.WAIVER_APPLIED,
+                message=f"a waiver for claim {claim.id} is in effect",
+                evidence_ids=_ids(waivers),
             )
         )
     else:
