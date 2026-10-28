@@ -112,7 +112,7 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | P4-14 | `reval explain CLAIM` | sonnet | P4-12 | done |
 | P4-15 | M4 demo script + review | sonnet+human-review | P4-03, P4-13, P4-14, P3-08 | review |
 | P4-16 | `reval init` and `reval graph` | sonnet | P2-17, P2-07 | done |
-| P4-17 | Decisiveness-aware planning (expected cost) | sonnet | P4-11, P4-15 | todo |
+| P4-17 | Decisiveness-aware planning (expected cost) | sonnet | P4-11, P4-15 | done |
 
 ## Phase 5 — ReValBench ([phase-5-bench.md](phase-5-bench.md))
 
@@ -121,16 +121,16 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | P5-01 | Pre-registration (HUMAN GATE) | human | P5-17 | todo |
 | P5-00 | Producer performance (in-process artifact and AD caches) | sonnet | P4-03 | done |
 | P5-02 | Bench harness: throwaway clones + scenario commits | sonnet | P3-06, P4-10, P5-00 | done |
-| P5-03 | Scenario model + generator, Tier A part 1 (T1–T5) | sonnet | P5-02, P4-03 | todo |
-| P5-04 | Tier A part 2 (T6, T10, T11) | sonnet | P5-03 | todo |
+| P5-03 | Scenario model + generator, Tier A part 1 (T1–T5) | sonnet | P5-02, P4-03 | done |
+| P5-04 | Tier A part 2 (T6, T10, T11) | sonnet | P5-03 | done |
 | P5-05 | Tier B virtual world model | sonnet+human-review | P1-08 | review |
-| P5-06 | Tier B scenarios (T6-B, T7, T8, T9, T12) | sonnet | P5-18, P5-04 | todo |
+| P5-06 | Tier B scenarios (T6-B, T7, T8, T9, T12) | sonnet | P5-18, P5-04 | done |
 | P5-07 | Evidence oracle (B0 rerun-all) | sonnet | P5-02 | done |
-| P5-08 | Truth oracles | sonnet | P5-05, P5-07 | todo |
+| P5-08 | Truth oracles | sonnet | P5-05, P5-07 | done |
 | P5-09 | Baselines B1–B4 | sonnet | P5-07 | done |
-| P5-10 | Metrics | sonnet | P5-07, P5-08, P5-09 | todo |
+| P5-10 | Metrics | sonnet | P5-07, P5-08, P5-09 | done |
 | P5-11 | Runner, cache, smoke config | sonnet | P5-10, P5-04, P5-06 | todo |
-| P5-12 | Statistics: stratified cluster bootstrap + non-inferiority | sonnet | P5-10 | todo |
+| P5-12 | Statistics: stratified cluster bootstrap + non-inferiority | sonnet | P5-10 | done |
 | P5-13 | Ablation settings plumbing (A1, A2, A3, A6, A7) | sonnet | P5-11 | todo |
 | P5-14 | Cost sensitivity | sonnet | P5-11 | todo |
 | P5-15 | Figures and tables (scripted) | sonnet | P5-12, P5-13, P5-19, P5-14, P5-20 | todo |
@@ -144,11 +144,11 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 
 | ID | Title | Owner | Depends on | Status |
 |---|---|---|---|---|
-| P6-01 | FastAPI app skeleton + `reval serve` | sonnet | P4-15 | todo |
-| P6-02 | Read endpoints: projects, snapshots, claims, evidence, diff, graph | sonnet | P6-01 | todo |
-| P6-03 | Plans, jobs, SSE | sonnet | P6-02 | todo |
-| P6-04 | Report endpoints | sonnet | P6-02, P4-13 | todo |
-| P6-05 | Alembic migrations, `reval db upgrade`, PostgreSQL CI | sonnet | P6-01 | todo |
+| P6-01 | FastAPI app skeleton + `reval serve` | sonnet | P4-15 | done |
+| P6-02 | Read endpoints: projects, snapshots, claims, evidence, diff, graph | sonnet | P6-01 | done |
+| P6-03 | Plans, jobs, SSE | sonnet | P6-02 | done |
+| P6-04 | Report endpoints | sonnet | P6-02, P4-13 | done |
+| P6-05 | Alembic migrations, `reval db upgrade`, PostgreSQL CI | sonnet | P6-01 | done |
 | P6-06 | Web scaffold, generated client, `reval api-schema` | sonnet | P6-02 | todo |
 | P6-07 | Claim board page | sonnet | P6-06 | todo |
 | P6-08 | Claim detail: justification tree + envelope plot | sonnet | P6-07 | todo |
@@ -156,7 +156,7 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | P6-10 | Graph explorer | sonnet | P6-06 | todo |
 | P6-11 | Planner page | sonnet | P6-03, P6-06 | todo |
 | P6-12 | Report view | sonnet | P6-04, P6-06 | todo |
-| P6-13 | GitHub Action | sonnet | P3-09 | todo |
+| P6-13 | GitHub Action | sonnet | P3-09 | review |
 | P6-14 | Docker Compose | sonnet | P6-06, P6-12 | todo |
 | P6-15 | Usability check (RQ5, optional) | human | P6-11 | todo |
 
@@ -165,9 +165,9 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | ID | Title | Owner | Depends on | Status |
 |---|---|---|---|---|
 | P7-01 | Paper draft | human | P5-16 | todo |
-| P7-02 | Documentation site | sonnet | P4-15 | todo |
-| P7-03 | Tutorial: add ReVal to a new project | sonnet+human-review | P7-02, P4-16 | todo |
-| P7-04 | Packaging + install test | sonnet | P7-02 | todo |
+| P7-02 | Documentation site | sonnet | P4-15 | done |
+| P7-03 | Tutorial: add ReVal to a new project | sonnet+human-review | P7-02, P4-16 | review |
+| P7-04 | Packaging + install test | sonnet | P7-02 | done |
 | P7-05 | End-to-end reproduction script | sonnet | P5-16 | todo |
 | P7-06 | Demo video and talk slides (optional) | human | P7-01 | todo |
 | P7-07 | Release v1.0.0 | sonnet+human-review | P7-04, P7-05 | todo |
