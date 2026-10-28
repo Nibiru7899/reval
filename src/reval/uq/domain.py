@@ -95,7 +95,7 @@ class ApplicabilityDomain:
     def _knn_mean(self, z: np.ndarray) -> np.ndarray:
         assert self._tree is not None and self._train_z is not None
         k = max(1, min(self.k, len(self._train_z)))
-        dist, _ = self._tree.query(z, k=k, workers=1)
+        dist, _ = self._tree.query(z, k=k, workers=-1)  # exact either way; parallel only for speed
         dist = np.asarray(dist, dtype=float)
         return dist if dist.ndim == 1 else dist.mean(axis=1)
 
@@ -179,3 +179,16 @@ class ApplicabilityDomain:
         obj._tau = float(d["tau"])
         obj._tree = cKDTree(obj._train_z)
         return obj
+
+
+def combine_reports(parts: Mapping[str, DomainReport]) -> dict[str, Any]:
+    """Merge named domain reports (for example drive map + model) into one JSON-able ``domain_report``."""
+    if not parts:
+        raise ValueError("combine_reports needs at least one part")
+    names = sorted(parts)
+    failing = next((n for n in names if not parts[n].inside), None)
+    return {
+        "inside": failing is None,
+        "first_failing_part": failing,
+        "parts": {n: parts[n].to_dict() for n in names},
+    }

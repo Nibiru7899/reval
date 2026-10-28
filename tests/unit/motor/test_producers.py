@@ -34,7 +34,8 @@ def _meta(pid: str) -> Producer:
 
 def test_binding_names_and_kinds(producers: None) -> None:
     ids = {rp.meta.id: rp.meta for rp in DEFAULT_REGISTRY.all()}
-    assert set(ids) == {"lptn_sim", "bench_measure", "shaft_check", "current_limit_check"}
+    base = {"lptn_sim", "bench_measure", "shaft_check", "current_limit_check"}
+    assert base <= set(ids) and len(ids) == len(base) + 6  # + six ML predictors (P4-03)
     assert ids["lptn_sim"].kind is ProducerKind.PHYSICS_SIM
     assert (ids["lptn_sim"].fidelity, ids["lptn_sim"].cost) == (2, 5)
     assert ids["bench_measure"].kind is ProducerKind.MEASUREMENT

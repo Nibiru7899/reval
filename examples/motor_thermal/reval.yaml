@@ -13,6 +13,13 @@ artifacts:
   tsw_ridge:   {kind: model, path: models/tsw_ridge.joblib, derived_from: [measures, splits]}
   tsw_hgb:     {kind: model, path: models/tsw_hgb.joblib, derived_from: [measures, splits]}
   tsw_mlp:     {kind: model, path: models/tsw_mlp.joblib, derived_from: [measures, splits]}
+  # Conformal + applicability-domain artifacts written by scripts/calibrate.py.
+  uq_tpm_ridge: {kind: model, path: models/uq_tpm_ridge.joblib, derived_from: [tpm_ridge, measures, splits]}
+  uq_tpm_hgb:   {kind: model, path: models/uq_tpm_hgb.joblib, derived_from: [tpm_hgb, measures, splits]}
+  uq_tpm_mlp:   {kind: model, path: models/uq_tpm_mlp.joblib, derived_from: [tpm_mlp, measures, splits]}
+  uq_tsw_ridge: {kind: model, path: models/uq_tsw_ridge.joblib, derived_from: [tsw_ridge, measures, splits]}
+  uq_tsw_hgb:   {kind: model, path: models/uq_tsw_hgb.joblib, derived_from: [tsw_hgb, measures, splits]}
+  uq_tsw_mlp:   {kind: model, path: models/uq_tsw_mlp.joblib, derived_from: [tsw_mlp, measures, splits]}
   lptn:        {kind: params, path: params/lptn.yaml, derived_from: [measures, splits]}
   # Model-form bands (K, per length class) written by scripts/calibrate_lptn.py next to the fit.
   lptn_report: {kind: params, path: models/lptn_report.json, hasher: yaml-fields, derived_from: [measures, splits, lptn]}

@@ -1,4 +1,4 @@
-"""Evidence producers for the motor example (docs/10 section 12; ML producers arrive in P4-03).
+"""Evidence producers for the motor example (docs/10 section 12).
 
 Producer ids are the binding names: ``lptn_sim``, ``bench_measure``, ``shaft_check``, ``current_limit_check``.
 Every artifact a producer touches is declared in ``depends_on`` (fail closed: reading anything else raises).
@@ -13,11 +13,12 @@ import pandas as pd
 
 import reval
 from motor import cycles, lptn
-from motor.features import add_derived
+from motor.features import add_derived, make_features
 from reval.domain.engineering import Subject, SubjectKind
-from reval.domain.evidence import EvidenceResult, Tolerance
+from reval.domain.evidence import EvidenceResult, Scope, Tolerance
 from reval.errors import ProducerError
 from reval.sdk import Context, ProducerOutput, exact_result, interval_result
+from reval.uq.domain import ApplicabilityDomain, DomainReport, combine_reports
 
 # Recorded cycles take their input channels from the dataset; declared by column so only these invalidate.
 _CYCLE_COLUMNS = "measures[torque,motor_speed,coolant,ambient]"
@@ -232,3 +233,130 @@ def current_limit_check(subject: Subject, ctx: Context) -> ProducerOutput:
     if not inside:
         return ProducerOutput(results=(_point_only("is_peak", "A", peak, report),))
     return ProducerOutput(results=(exact_result("is_peak", "A", peak),))
+
+
+# --- ML predictors (docs/05 section 3, docs/10 section 5) -------------------------------------------------
+# Recorded subjects need the raw electrical channels for the features; torque etc. feed the drive map.
+_ML_COLUMNS = "measures[torque,motor_speed,coolant,ambient,u_q,u_d,i_q,i_d]"
+_ML_KINDS = ("ridge", "hgb", "mlp")
+_ML_TARGET = {"pm_peak": ("tpm", "pm"), "sw_peak": ("tsw", "stator_winding")}
+_BOX_COLUMNS = ("torque", "motor_speed", "coolant", "ambient")
+
+
+def _ml_features(
+    subject: Subject, ctx: Context, drive_map: Any
+) -> tuple[pd.DataFrame, pd.DataFrame, DomainReport]:
+    """Model features of the subject's segment, the raw cycle and the drive-map domain report.
+
+    Recorded subjects: the EWMA features are causal and recursive, so they depend on the history. They are
+    computed on the whole profile from its start up to the segment end and then sliced to the segment, which
+    reproduces what the model saw at calibration (windows started at the profile start) and uses no
+    information from after the segment. Parametric cycles have no history: the EWMAs start cold at the
+    first sample of the cycle, a documented approximation (long spans then track the current inputs).
+    """
+    if subject.generator == _RECORDED:
+        p = subject.params
+        df = ctx.load("measures")
+        prof = df[df["profile_id"] == int(p["profile_id"])].sort_values("t")
+        i0 = round(float(p["start_s"]) * cycles.HZ)
+        n = round(float(p["duration_s"]) * cycles.HZ)
+        if prof.empty or i0 < 0 or n <= 0 or i0 + n > len(prof):
+            raise ProducerError(f"{subject.id}: segment outside the recorded profile")
+        feats = make_features(prof.iloc[: i0 + n].reset_index(drop=True))[0].iloc[i0:].reset_index(drop=True)
+        cycle = cycles.recorded(int(p["profile_id"]), float(p["start_s"]), float(p["duration_s"]), df)
+        torque, speed = cycle["torque"].to_numpy(), cycle["motor_speed"].to_numpy()
+        report = drive_map.domain_report(torque, speed)
+        return feats, cycle, report
+    cycle = _cycle(subject, ctx)
+    inputs = drive_map.to_inputs(
+        cycle["torque"].to_numpy(),
+        cycle["motor_speed"].to_numpy(),
+        cycle["coolant"].to_numpy(),
+        cycle["ambient"].to_numpy(),
+    )
+    report = drive_map.domain_report(cycle["torque"].to_numpy(), cycle["motor_speed"].to_numpy())
+    frame = inputs.reset_index(drop=True).assign(profile_id=0)
+    return make_features(frame)[0], cycle, report
+
+
+def _check_model_domain(ad: ApplicabilityDomain, x: np.ndarray) -> DomainReport:
+    """Strict AD check of every row: range box and kNN distance (fail closed, docs/04 A4).
+
+    The kNN query is the expensive part. It runs in parallel inside ApplicabilityDomain, and its
+    results don't depend on the worker count, so no row is ever skipped.
+    """
+    return ad.check(x)
+
+
+def _predict_peak(subject: Subject, ctx: Context, quantity: str, model_kind: str) -> ProducerOutput:
+    prefix, target = _ML_TARGET[quantity]
+    model = ctx.load(f"{prefix}_{model_kind}")
+    uq = ctx.load(f"uq_{prefix}_{model_kind}")
+    drive_map = ctx.load("drive_map")
+    feats, cycle, dm_report = _ml_features(subject, ctx, drive_map)
+    pred = model.predict(feats)[target].to_numpy(dtype=float)
+    peak = float(pred.max())
+    ad = ApplicabilityDomain.from_dict(uq["ad"])
+    model_report = _check_model_domain(ad, feats[model.feature_names].to_numpy(dtype=float))
+    combined = combine_reports({"drive_map": dm_report, "model": model_report})
+    inside = bool(combined["inside"])
+    cls = cycles.length_class(len(cycle) * cycles.DT_S)
+    iv = uq["conformal"].interval(target, peak, cls)
+    if iv is None:  # q = inf: too few calibration windows, so no honest interval (docs/10 section 5)
+        result = EvidenceResult(
+            quantity=quantity,
+            unit="degC",
+            point=peak,
+            uncertainty_kind="none",
+            in_domain=inside,
+            domain_report=combined,
+        )
+    else:
+        result = interval_result(
+            quantity,
+            "degC",
+            peak,
+            float(iv[0]),
+            float(iv[1]),
+            uncertainty_kind="conformal",
+            in_domain=inside,
+            domain_report=combined,
+        )
+    box = {c: (float(cycle[c].min()), float(cycle[c].max())) for c in _BOX_COLUMNS}
+    return ProducerOutput(results=(result,), scope=Scope(box=box))
+
+
+def _register_ml(quantity: str, model_kind: str) -> None:
+    prefix, _ = _ML_TARGET[quantity]
+    name = "pm" if quantity == "pm_peak" else "sw"
+
+    def fn(subject: Subject, ctx: Context) -> ProducerOutput:
+        return _predict_peak(subject, ctx, quantity, model_kind)
+
+    fn.__name__ = fn.__qualname__ = f"predict_{name}_peak_{model_kind}"
+    fn.__doc__ = (
+        f"Peak {quantity} of the {model_kind} trajectory model with a conformal interval and AD gate."
+    )
+    reval.producer(
+        id=fn.__name__,
+        kind="ml_prediction",
+        quantity=quantity,
+        fidelity=1,
+        cost=1,
+        # cooling#/flow_scale has no tolerance on purpose: a flow change fails closed (nothing bounds the
+        # model's response to a coolant-flow change).
+        depends_on=[
+            f"{prefix}_{model_kind}",
+            f"uq_{prefix}_{model_kind}",
+            "drive_map",
+            "cooling#/flow_scale",
+            _ML_COLUMNS,
+        ],
+        predictors=[f"{prefix}_{model_kind}"],
+        available_for=_is_duty_cycle,
+    )(fn)
+
+
+for _q in _ML_TARGET:
+    for _m in _ML_KINDS:
+        _register_ml(_q, _m)

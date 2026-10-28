@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Sequence
 
 import numpy as np
 
@@ -63,6 +64,37 @@ class SplitConformal:
     @property
     def n(self) -> int:
         return self._n
+
+
+class GroupedSplitConformal:
+    """One :class:`SplitConformal` per group (for example per length class); pure numpy."""
+
+    def __init__(self, alpha: float) -> None:
+        if not 0.0 < alpha < 1.0:
+            raise ValueError(f"alpha must be in (0, 1), got {alpha}")
+        self.alpha = alpha
+        self._by_group: dict[str, SplitConformal] = {}
+
+    def fit(self, y_true: np.ndarray, y_pred: np.ndarray, groups: Sequence[str]) -> GroupedSplitConformal:
+        """Calibrate one interval per distinct group label on |y_true - y_pred|."""
+        yt = np.asarray(y_true, dtype=float).ravel()
+        yp = np.asarray(y_pred, dtype=float).ravel()
+        g = np.asarray([str(x) for x in groups])
+        if not (len(yt) == len(yp) == len(g)):
+            raise ValueError("y_true, y_pred and groups must have the same length")
+        self._by_group = {}
+        for name in sorted(set(g.tolist())):
+            m = g == name
+            self._by_group[name] = SplitConformal(self.alpha).fit(yt[m], yp[m])
+        return self
+
+    def interval(self, y_pred: float, group: str) -> tuple[float, float] | None:
+        """Interval for ``group``; None if its q is infinite. Unknown group raises KeyError (fail closed)."""
+        return self._by_group[group].interval(y_pred)
+
+    @property
+    def q_by_group(self) -> dict[str, float]:
+        return {k: v.q for k, v in self._by_group.items()}
 
 
 def empirical_coverage(y_true: np.ndarray, lo: np.ndarray, hi: np.ndarray) -> float:
