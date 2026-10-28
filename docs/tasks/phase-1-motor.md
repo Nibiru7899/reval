@@ -115,7 +115,7 @@ P2-01, a small standalone task, so do P2-01 first.
     The R pairs are SW–ST, ST–SY, SY–coolant (nominal `R_ic`), PM–ST, PM–ambient, and SW–ambient.
   - `r_coolant(r_ic_nominal: float, flow_scale: float) -> float` returns `r_ic_nominal * flow_scale ** -0.8` (forced convection; cite the source in the docstring).
   - `losses(i_s, u_s, w, theta_sw, p) -> dict[str, np.ndarray]`: P_cu at SW = `k_cu·i_s²·(1 + alpha_cu·(theta_sw − 20))`; iron loss split between ST and SY,
-    ∝ `k_fe1·w + k_fe2·w²·u_s`; PM loss ∝ `k_pm·w²`.
+    ∝ `k_fe1·w + k_fe2·w²·u_s`; PM loss ∝ `k_pm·w²·i_s²`.
   - `simulate(inputs: pd.DataFrame, p: LPTNParams, theta0: Mapping[str, float] | None = None, dt: float = 0.5, *, flow_scale: float = 1.0) -> pd.DataFrame`: one profile, explicit Euler, columns = `NODES`.
     `theta0` defaults to the coolant temperature at t = 0 for every node. Raises `ValueError` if `dt > min(R·C)/2` (stability guard).
   - `load_params(path: Path) -> LPTNParams` / `dump_params(p: LPTNParams, path: Path) -> None`, with flat pointer-friendly keys (`/R/sw_st`, `/C/pm`, `/loss/k_cu`).

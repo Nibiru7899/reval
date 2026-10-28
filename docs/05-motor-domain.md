@@ -65,7 +65,7 @@ C_i · dϑ_i/dt = P_i(i_s, u_s, ω, ϑ) + Σ_j (ϑ_j − ϑ_i) / R_ij + (ϑ_c �
   - ML producers declare `cooling#/flow_scale` as a dependency **without** a sensitivity. Any flow change therefore invalidates ML evidence (fail-closed), because the ML models never saw flow variation.
   - The Tier B world model applies the same physical change through its own, different flow–conductance relation (§8).
 
-- Losses: copper `P_cu ∝ i_s² · R_ref · (1 + α_cu (ϑ_SW − ϑ_ref))`, iron and magnet losses as low-order polynomials in ω and u_s.
+- Losses: copper `P_cu ∝ i_s² · R_ref · (1 + α_cu (ϑ_SW − ϑ_ref))`, iron loss `∝ k_fe1·ω + k_fe2·ω²·u_s`, magnet loss `∝ k_pm·ω²·i_s²` (eddy losses grow with stator-current harmonics as well as frequency).
 - Identify (C, R, loss coefficients) on `train` with `scipy.optimize.least_squares`, using explicit-Euler simulation at Δt = 0.5 s
   (a vectorized NumPy loop; consider `numba` if it's too slow).
 - Validate on `test` and compute the model-form band δ per target from the test residual distribution of peaks.
