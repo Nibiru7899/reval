@@ -31,3 +31,36 @@ jobs:
         run: pytest -m "not data and not slow" --cov=reval --cov-report=term-missing
       - name: Core coverage gate
         run: pytest tests/unit/core tests/property -m "not slow" --cov=reval.core --cov-fail-under=90
+
+  postgres:
+    # Migrations and the store against a real PostgreSQL (ADR 0003). Cut line 2: drop if behind.
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_USER: reval
+          POSTGRES_PASSWORD: reval-ci-only
+          POSTGRES_DB: reval
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U reval"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      REVAL_TEST_POSTGRES_URL: postgresql+psycopg://reval:reval-ci-only@localhost:5432/reval
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install -e ".[dev,motor,server,postgres]"
+      - name: Apply migrations
+        run: REVAL_DATABASE_URL="$REVAL_TEST_POSTGRES_URL" reval db upgrade
+      - name: Migration and store tests on PostgreSQL
+        run: pytest tests/integration/test_migrations.py tests/unit/store -m "not data and not slow"
