@@ -107,3 +107,6 @@ The owner clarified that ReVal is a personal project: no institution, supervisor
   re-check the old failure with `reval run` on that producer and subject. Revisit if the report (P4-12) needs it.
 - **I6 decided statuses:** the property accepts SUPPORTED or WAIVED. A claim that carries a waiver ends WAIVED once its lost FAIL is superseded, because the lost-fail rule outranks the waiver (S1).
 - `reval run --only P` without `--plan` uses the latest stored plan; `--plan` runs only against the snapshot the plan was made for (otherwise exit 3).
+- **G1 (2026-10-28):** the Phase 6 gate on M5 is lifted. The owner asked for the project to be completed as far as possible, with a polished UI,
+  while agents do the implementation. The gate existed to protect a solo developer's time, and that reason no longer applies. M5 itself still
+  waits for the owner's pre-registration (P5-01) before the final run (P5-16).

@@ -1,7 +1,7 @@
 # Phase 6 — API, web workspace, CI integration (roadmap weeks 24–27, milestone M6)
 
 **Read first for every task:** `AGENTS.md`, `docs/09-api-and-ui.md`, `docs/10-interfaces.md` §8, §11, ADR 0003.
-**Gate:** Phase 6 starts only after the M5 DoD (P5-16), so P6-01 depends on it. If M5 isn't met by week 23, do only the static HTML report (`reval report --html`, already done in P4-13).
+**Gate (lifted 2026-10-28, see docs/log/2026-10-26-audit-decisions.md G1):** originally, Phase 6 started only after the M5 DoD (P5-16). If M5 isn't met by week 23, do only the static HTML report (`reval report --html`, already done in P4-13).
 The GitHub Action (P6-13) is cut line 4 and is dropped before the static HTML report (cut line 5). See the cut lines in `docs/07-roadmap.md`.
 **Phase goal (M6 DoD):** the workspace runs locally on the motor example (`reval serve`, or `docker compose up`), and the demo PR shows the GitHub Action comment.
 **API scope (D27):** single project. The routes keep `/projects/{p}`, but only `p = "default"` exists, with its root from `REVAL_PROJECT_ROOT`. Any other `p` → 404.
@@ -11,7 +11,7 @@ Pin exact versions in `package.json`. Conventions: see the header of `phase-0-fo
 ---
 
 ## P6-01 — FastAPI app skeleton + `reval serve`
-- **Owner:** sonnet · **Depends on:** P4-15, P5-16 · **Read first:** `docs/09` (REST API), `docs/10` §11
+- **Owner:** sonnet · **Depends on:** P4-15 · **Read first:** `docs/09` (REST API), `docs/10` §11
 - **Files:** `src/reval/api/{__init__,app,deps,settings}.py`, `src/reval/cli/main.py` (`serve`), `tests/integration/api/test_health.py`
 - **Spec:** `create_app(settings: ApiSettings) -> FastAPI` mounts the API at `/api/v1`. `GET /api/v1/health` → `{status, version}`. A dependency injects a `Project` opened from `REVAL_PROJECT_ROOT`.
   Response models are **imported from `reval.domain` / `reval.report`**, never redefined. `reval serve [--host] [--port]` launches uvicorn. The `server` extra is required, and a clear

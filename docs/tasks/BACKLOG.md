@@ -143,7 +143,7 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 
 | ID | Title | Owner | Depends on | Status |
 |---|---|---|---|---|
-| P6-01 | FastAPI app skeleton + `reval serve` | sonnet | P4-15, P5-16 | todo |
+| P6-01 | FastAPI app skeleton + `reval serve` | sonnet | P4-15 | todo |
 | P6-02 | Read endpoints: projects, snapshots, claims, evidence, diff, graph | sonnet | P6-01 | todo |
 | P6-03 | Plans, jobs, SSE | sonnet | P6-02 | todo |
 | P6-04 | Report endpoints | sonnet | P6-02, P4-13 | todo |
