@@ -29,7 +29,7 @@ import pandas as pd
 
 from bench.analysis import metrics as M
 from bench.analysis import stats as S
-from bench.analysis.tables import NA, ablation_table, h1_table, load_rows
+from bench.analysis.tables import DELTA, NA, ablation_table, h1_table, load_rows
 
 TIERS = ("A", "B")
 TIER_TITLE = {"A": "Tier A (recorded data)", "B": "Tier B (simulated world)"}
@@ -315,7 +315,7 @@ def _profiles(root: Path, main: pd.DataFrame) -> dict[str, pd.DataFrame]:
     return out
 
 
-def generate(root: Path, n_boot: int) -> list[Path]:
+def generate(root: Path, n_boot: int, delta: float = DELTA) -> list[Path]:
     """Write every figure and table under ``root``; returns the paths written."""
     main = load_rows(root / "rows.parquet")
     if main is None:
@@ -335,16 +335,19 @@ def generate(root: Path, n_boot: int) -> list[Path]:
     fig_cost_sensitivity(
         _profiles(root, pd.read_parquet(root / "rows.parquet")), fig / "fig7_cost_sensitivity.png"
     )
-    (tab / "h1.tex").write_text(h1_table(main, n_boot), encoding="utf-8")
+    (tab / "h1.tex").write_text(h1_table(main, n_boot, delta=delta), encoding="utf-8")
     return sorted([*fig.glob("*.png"), *tab.glob("*.tex")])
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     ap = argparse.ArgumentParser(prog="python -m bench.analysis.figures", description=__doc__.splitlines()[0])
     ap.add_argument("--results", type=Path, required=True, help="bench/results/<hash>")
+    ap.add_argument(
+        "--delta", type=float, default=DELTA, help="non-inferiority margin (pre-registered value)"
+    )
     ap.add_argument("--n-boot", type=int, default=10_000, help="bootstrap resamples (docs/06: 10000)")
     args = ap.parse_args(argv)
-    for p in generate(args.results, args.n_boot):
+    for p in generate(args.results, args.n_boot, args.delta):
         print(p)
     return 0
 

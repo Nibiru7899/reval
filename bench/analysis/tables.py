@@ -172,7 +172,7 @@ def prepare_tier(df: pd.DataFrame) -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 
-def h1_table(main: pd.DataFrame, n_boot: int, seed: int = 0) -> str:
+def h1_table(main: pd.DataFrame, n_boot: int, seed: int = 0, delta: float = DELTA) -> str:
     """Four-part H1 table, Tier A and Tier B separately (never pooled); H1 holds only if all four hold."""
     header = ["Tier", "Component", "estimate", "bound", "holds"]
     rows: list[list[str]] = []
@@ -181,10 +181,10 @@ def h1_table(main: pd.DataFrame, n_boot: int, seed: int = 0) -> str:
         if d.empty:
             rows.append([tier, NA, NA, NA, NA])
             continue
-        parts = h1_parts(d, n_boot, seed)
+        parts = h1_parts(d, n_boot, seed, delta)
         for p in parts:
             rows.append([tier, p["part"], p["statistic"], p["bound"], p["holds"]])
         ok = S.intersection_union({p["part"]: p["holds"] == "yes" for p in parts})
         rows.append([tier, "H1 (all four parts)", "", "", "yes" if ok else "no"])
-    cap = f"H1 components (delta = {DELTA}); supported by recorded evidence against the declared requirement."
+    cap = f"H1 components (delta = {delta}); supported by recorded evidence against the declared requirement."
     return tex_table(header, rows, cap, "tab:h1")
