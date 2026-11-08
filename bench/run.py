@@ -92,7 +92,7 @@ class RevalRunConfig(BaseModel):
 
     model_config = ConfigDict(frozen=True, extra="forbid")
 
-    planner: str = "ilp"
+    planner: str | None = None  # None: ``settings.planner`` (ablation A6)
     decisiveness_aware: bool = True
     max_rounds: int = Field(default=3, ge=1)  # plan -> execute rounds until nothing is left to run
 
@@ -110,6 +110,7 @@ class RunConfig(BaseModel):
     epsilon: dict[str, float]  # pre-registered per quantity (docs/06 section 2)
     methods: tuple[str, ...] = METHODS
     reval: RevalRunConfig = RevalRunConfig()
+    settings: ReValSettings = DEFAULT_SETTINGS  # ablation switches A1-A3, A6, A7 (bench/configs/ablations)
     lptn_args: tuple[str, ...] = ("--max-profiles", "12", "--max-nfev", "60")
     jobs: int = Field(default=4, ge=1)
 
@@ -548,7 +549,7 @@ def scenario_records(
     timings["apply"] = time.perf_counter() - t
 
     t = time.perf_counter()
-    post = Project.open(root)
+    post = Project.open(root, settings=cfg.settings)
     snap = post.snapshot(write_lock=True)
     ws.commit(f"S' {sc.id}", lock=False)
     cache.salt = _salt(root, sc.tier, cfg.motor)

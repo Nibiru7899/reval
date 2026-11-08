@@ -464,9 +464,16 @@ class FreshnessResult:
     inflation: float                    # 0.0 unless CARRY_FORWARD; in the quantity's difference unit (§1.3)
     relevant_changes: tuple[Change, ...]
 
-def classify_evidence(e: Evidence, old: Snapshot, new: Snapshot, changes: ChangeSet) -> FreshnessResult: ...
+def classify_evidence(e: Evidence, old: Snapshot, new: Snapshot, changes: ChangeSet,
+                      *, settings: ReValSettings = DEFAULT_SETTINGS) -> FreshnessResult: ...
 def classify_all(evidence: Sequence[Evidence], snapshots: Mapping[str, Snapshot], new: Snapshot,
-                 changesets: Mapping[str, ChangeSet]) -> dict[str, FreshnessResult]: ...
+                 changesets: Mapping[str, ChangeSet],
+                 *, settings: ReValSettings = DEFAULT_SETTINGS) -> dict[str, FreshnessResult]: ...
+    # settings (bench ablations only): A1 treats every dep as whole-artifact, A2/A3 disable tolerance/row excuses,
+    # A7 replaces Tolerance.safety_factor (>= 1).
+    # A1-A3 are never fresher than the default; A7 may be less conservative. All non-default settings are bench-only,
+    # forbidden for real use.
+    # Project.open(root, settings=...) passes them through; Project.plan(planner=None) uses settings.planner (A6).
     # keyed by evidence id; snapshots/changesets keyed by evidence.provenance.snapshot_id.
     # If the old snapshot is missing → INVALIDATED with UNKNOWN_CHANGE (fail-closed).
 def carry_forward(e: Evidence, fr: FreshnessResult, new: Snapshot) -> Evidence: ...

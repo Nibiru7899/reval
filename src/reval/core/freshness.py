@@ -15,6 +15,7 @@ from reval.domain.assessment import Reason
 from reval.domain.changes import Change, ChangeKind, ChangeSet
 from reval.domain.evidence import Dependency, Evidence, Tolerance
 from reval.domain.selectors import Selector
+from reval.domain.settings import DEFAULT_SETTINGS, ReValSettings
 from reval.domain.snapshot import Snapshot
 from reval.domain.status import FreshnessClass, ReasonCode
 from reval.errors import ManifestError
@@ -89,16 +90,37 @@ class _Ctx:
     deps_star: frozenset[str]  # artifacts of deps plus their derived closures (old and new)
     upstream: frozenset[str]  # derived closures of dep artifacts only (rule (f))
     scoped_assumptions: frozenset[str]
+    settings: ReValSettings
 
 
-def _context(e: Evidence, old: Snapshot, new: Snapshot) -> _Ctx:
-    deps = tuple((d, _parse(d.selector)) for d in e.deps)
+def _dep_selector(text: str, settings: ReValSettings) -> Selector | None:
+    sel = _parse(text)
+    # A1 (bench only): without field-level selectors every dependency is the whole artifact.
+    if sel is not None and not settings.field_level_selectors:
+        return Selector(artifact_id=sel.artifact_id)
+    return sel
+
+
+def _dep_changed(d: Dependency, s: Selector | None, x: _Ctx) -> bool:
+    """True when what the dependency refers to differs between the recorded and the new snapshot."""
+    if s is None:
+        return True
+    if x.settings.field_level_selectors:
+        return d.version_hash != selector_hash(x.new, d.selector)
+    # A1: the recorded hash is field-level, so compare the whole artifact at the evidence's own snapshot.
+    return selector_hash(x.old, s.render()) != selector_hash(x.new, s.render())
+
+
+def _context(e: Evidence, old: Snapshot, new: Snapshot, settings: ReValSettings) -> _Ctx:
+    deps = tuple((d, _dep_selector(d.selector, settings)) for d in e.deps)
     arts = {s.artifact_id for _, s in deps if s is not None}
     upstream: set[str] = set()
     for a in arts:
         upstream |= derived_closure(old, a) | derived_closure(new, a)
     scoped = set(e.scope.assumption_ids) | {t.assumption_id for t in e.tolerances}
-    return _Ctx(e, old, new, deps, frozenset(arts | upstream), frozenset(upstream), frozenset(scoped))
+    return _Ctx(
+        e, old, new, deps, frozenset(arts | upstream), frozenset(upstream), frozenset(scoped), settings
+    )
 
 
 @dataclass(frozen=True)
@@ -141,7 +163,7 @@ def _match(c: Change, x: _Ctx) -> _Match:
 def _exact(x: _Ctx, changes: ChangeSet) -> bool:
     e, new = x.e, x.new
     for d, s in x.deps:
-        if s is None or d.version_hash != selector_hash(new, d.selector):
+        if _dep_changed(d, s, x):
             return False
     producer = new.producers[e.producer_id]
     if producer.code_hash != e.provenance.producer_code_hash:
@@ -161,6 +183,8 @@ def _disjoint(a: tuple[float, float], b: tuple[float, float]) -> bool:
 
 def _excuse_rows(c: Change, m: _Match, x: _Ctx) -> str | None:
     """None if excused (out of scope), else why not."""
+    if not x.settings.scope_freshness:
+        return "scope-based excuses are disabled (ablation A3)"
     for s in m.via_a:
         if not s.columns:
             return f"matched by non-column dependency {s.render()}"
@@ -189,6 +213,8 @@ def _number(v: object) -> float | None:
 
 def _excuse_field(c: Change, m: _Match, x: _Ctx) -> tuple[str | None, float]:
     """(None, inflation) if excused by a tolerance, else (why not, 0)."""
+    if not x.settings.tolerance_carry_forward:
+        return "tolerance carry-forward is disabled (ablation A2)", 0.0
     for s in m.via_a:
         if s.pointer is None:
             return f"matched by non-pointer dependency {s.render()}", 0.0
@@ -216,11 +242,24 @@ def _excuse_field(c: Change, m: _Match, x: _Ctx) -> tuple[str | None, float]:
             return f"value {old} -> {new} outside tolerance valid_range [{lo}, {hi}]", 0.0
     step = max(abs(new - old), abs(c.delta))
     # Several tolerances on one field: take the most conservative one. kappa is applied exactly once (D14).
-    return None, max(t.safety_factor * t.sensitivity * step for t in tols)
+    kappa = x.settings.kappa_override
+    return None, max((t.safety_factor if kappa is None else kappa) * t.sensitivity * step for t in tols)
 
 
-def classify_evidence(e: Evidence, old: Snapshot, new: Snapshot, changes: ChangeSet) -> FreshnessResult:
-    """Freshness class of ``e`` (recorded at ``old``) at ``new``, given ``changes = diff(old, new)``."""
+def classify_evidence(
+    e: Evidence,
+    old: Snapshot,
+    new: Snapshot,
+    changes: ChangeSet,
+    *,
+    settings: ReValSettings = DEFAULT_SETTINGS,
+) -> FreshnessResult:
+    """Freshness class of ``e`` (recorded at ``old``) at ``new``, given ``changes = diff(old, new)``.
+
+    ``settings`` only ever disables excuses or replaces kappa (benchmark ablations A1-A3, A7); the defaults
+    are the full method. A1-A3 are never more permissive than the default; A7 (kappa) is a bench-only sweep
+    and may be less conservative. Non-default settings are forbidden for real use.
+    """
     # Step 0: hard failures, including inputs that don't belong together.
     if e.provenance.snapshot_id != old.id or changes.from_snapshot != old.id or changes.to_snapshot != new.id:
         return _invalid(
@@ -242,7 +281,7 @@ def classify_evidence(e: Evidence, old: Snapshot, new: Snapshot, changes: Change
                 e, ReasonCode.REQUIREMENT_CHANGED, f"requirement {req.id} changed since the waiver"
             )
 
-    x = _context(e, old, new)
+    x = _context(e, old, new, settings)
     # Step 1: exact shortcut.
     if _exact(x, changes):
         return FreshnessResult(e.id, FreshnessClass.FRESH_EXACT, (), 0.0, ())
@@ -263,7 +302,7 @@ def classify_evidence(e: Evidence, old: Snapshot, new: Snapshot, changes: Change
                     evidence_ids=(e.id,),
                 )
             )
-        elif d.version_hash != selector_hash(new, d.selector) and s not in explained:
+        elif _dep_changed(d, s, x) and s not in explained:
             reasons.append(
                 Reason(
                     code=ReasonCode.UNKNOWN_CHANGE,
@@ -324,6 +363,8 @@ def classify_all(
     snapshots: Mapping[str, Snapshot],
     new: Snapshot,
     changesets: Mapping[str, ChangeSet],
+    *,
+    settings: ReValSettings = DEFAULT_SETTINGS,
 ) -> dict[str, FreshnessResult]:
     """Classify every item; ``snapshots``/``changesets`` are keyed by ``provenance.snapshot_id``."""
     out: dict[str, FreshnessResult] = {}
@@ -333,7 +374,7 @@ def classify_all(
         if old is None or cs is None:
             out[e.id] = _invalid(e, ReasonCode.UNKNOWN_CHANGE, f"snapshot {sid} or its change set is missing")
         else:
-            out[e.id] = classify_evidence(e, old, new, cs)
+            out[e.id] = classify_evidence(e, old, new, cs, settings=settings)
     return out
 
 

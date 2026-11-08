@@ -29,15 +29,15 @@ from reval.domain.plan import CandidateRun, Obligation, PlannedRun, PlanningProb
 from reval.domain.policies import DEFAULT_POLICIES, EvidenceRequirement, Policy
 from reval.domain.quantities import Interval
 from reval.domain.selectors import Selector
+from reval.domain.settings import DEFAULT_SETTINGS, ReValSettings
 from reval.domain.snapshot import Snapshot
 from reval.domain.status import ACCEPTED_STATUSES, FreshnessClass, ReasonCode, Status, Verdict
-
-# ReValSettings / DEFAULT_SETTINGS (settings.py) are not yet implemented; no task owns them in P2-02/14/03.
 
 __all__ = [
     "ACCEPTED_STATUSES",
     "DEFAULT_FIDELITY",
     "DEFAULT_POLICIES",
+    "DEFAULT_SETTINGS",
     "Artifact",
     "ArtifactKind",
     "ArtifactVersion",
@@ -65,6 +65,7 @@ __all__ = [
     "Producer",
     "ProducerKind",
     "Provenance",
+    "ReValSettings",
     "Reason",
     "ReasonCode",
     "Requirement",

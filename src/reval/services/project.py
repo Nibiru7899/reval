@@ -15,6 +15,7 @@ from reval.domain import Assessment, ChangeSet, Evidence, FreshnessClass, Snapsh
 from reval.domain.engineering import Subject
 from reval.domain.evidence import ProducerKind
 from reval.domain.plan import PlannedRun, RevalidationPlan
+from reval.domain.settings import DEFAULT_SETTINGS, ReValSettings
 from reval.errors import ProducerError, RevalError
 from reval.gitio import lockfile
 from reval.manifest import ManifestModel, load_manifest
@@ -66,15 +67,23 @@ class Project:
         registry: ProducerRegistry,
         store: SqlStore,
         clock: Callable[[], datetime],
+        settings: ReValSettings = DEFAULT_SETTINGS,
     ) -> None:
         self.root = root
         self.manifest = manifest
         self.registry = registry
         self.store = store
         self.clock = clock  # report timestamps only (D19); never reaches core
+        self.settings = settings  # benchmark ablations; the defaults are the full method
 
     @classmethod
-    def open(cls, root: Path, *, clock: Callable[[], datetime] | None = None) -> "Project":
+    def open(
+        cls,
+        root: Path,
+        *,
+        clock: Callable[[], datetime] | None = None,
+        settings: ReValSettings = DEFAULT_SETTINGS,
+    ) -> "Project":
         """Load the manifest, import the producer modules and open the store."""
         root = Path(root).resolve()
         manifest = load_manifest(root / MANIFEST_FILE)
@@ -89,7 +98,14 @@ class Project:
             raise ProducerError(
                 f"cannot import producer modules {modules}: {type(exc).__name__}: {exc}"
             ) from exc
-        return cls(root, manifest, DEFAULT_REGISTRY, open_store(root), clock or (lambda: datetime.now(UTC)))
+        return cls(
+            root,
+            manifest,
+            DEFAULT_REGISTRY,
+            open_store(root),
+            clock or (lambda: datetime.now(UTC)),
+            settings,
+        )
 
     def snapshot(self, *, write_lock: bool = False) -> Snapshot:
         """Live snapshot of the working tree; stored, and optionally written to ``reval.lock.json``."""
@@ -133,7 +149,7 @@ class Project:
             if old is not None:
                 snapshots[sid] = old
                 changesets[sid] = diff_snapshots(old, snap)
-        freshness = classify_all(evidence, snapshots, snap, changesets)
+        freshness = classify_all(evidence, snapshots, snap, changesets, settings=self.settings)
         items: list[AssessInput] = []
         for e in evidence:
             fr = freshness[e.id]
@@ -172,7 +188,7 @@ class Project:
         self,
         snapshot: Snapshot | None = None,
         *,
-        planner: str = "ilp",
+        planner: str | None = None,
         objective: str = "min_cost",
         budget: float | None = None,
         decisiveness_aware: bool = True,
@@ -181,8 +197,9 @@ class Project:
 
         With ``decisiveness_aware`` (the default) the planner minimizes expected cost, using the most recent
         stored evidence of each (producer, subject, quantity) to estimate P(decisive) (P4-17); with False it
-        assumes every run is decisive (the one-shot plan).
+        assumes every run is decisive (the one-shot plan). ``planner=None`` uses ``settings.planner`` (A6).
         """
+        planner = self.settings.planner if planner is None else planner
         snap = snapshot if snapshot is not None else self.snapshot()
         self.store.put_snapshot(snap)
         assessments, _, items = self._assess_detail(snap)
