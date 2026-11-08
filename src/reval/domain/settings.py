@@ -8,7 +8,7 @@ from reval.domain.base import Frozen
 
 
 class ReValSettings(Frozen):
-    """Ablation switches for the benchmark; defaults are the full method. Non-default values are bench-only."""
+    """Ablation switches for the benchmark; defaults are the full method. Non-default values: bench only."""
 
     field_level_selectors: bool = True
     tolerance_carry_forward: bool = True
