@@ -129,7 +129,7 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | P5-08 | Truth oracles | sonnet | P5-05, P5-07 | done |
 | P5-09 | Baselines B1–B4 | sonnet | P5-07 | done |
 | P5-10 | Metrics | sonnet | P5-07, P5-08, P5-09 | done |
-| P5-11 | Runner, cache, smoke config | sonnet | P5-10, P5-04, P5-06 | todo |
+| P5-11 | Runner, cache, smoke config | sonnet | P5-10, P5-04, P5-06 | review |
 | P5-12 | Statistics: stratified cluster bootstrap + non-inferiority | sonnet | P5-10 | done |
 | P5-13 | Ablation settings plumbing (A1, A2, A3, A6, A7) | sonnet | P5-11 | todo |
 | P5-14 | Cost sensitivity | sonnet | P5-11 | todo |

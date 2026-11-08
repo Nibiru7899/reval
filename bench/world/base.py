@@ -164,6 +164,13 @@ def build_tier_b_base(
     os.replace(tmp, parquet)
 
     pairs = [(m, t) for m in models for t in TARGETS]
+    # Outputs may be hardlinks into a shared cache (Workspace.create): remove them
+    # so the scripts write new files.
+    for m, t in pairs:
+        for pat in (f"{_PREFIX[t]}_{m}.*", f"uq_{_PREFIX[t]}_{m}.*"):
+            for f in (root / "models").glob(pat):
+                f.unlink()
+    (root / "models" / "lptn_report.json").unlink(missing_ok=True)
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
         list(
             pool.map(lambda mt: _run(root, ["scripts/train.py", "--model", mt[0], "--target", mt[1]]), pairs)
@@ -185,7 +192,8 @@ def build_tier_b_base(
     if not write_lock:
         return
     proc = subprocess.run(
-        [sys.executable, "-m", "reval.cli.main", "snapshot", "--write"],
+        # reval.cli.main has no __main__ guard: `-m reval.cli.main` would exit 0 without writing the lock.
+        [sys.executable, "-c", "from reval.cli.main import app; app()", "snapshot", "--write"],
         cwd=root,
         capture_output=True,
         text=True,
