@@ -8,7 +8,14 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from bench.experiments.rq4 import CELLS, Rq4Config, run_rq4
+from bench.experiments.rq4 import (
+    CELLS,
+    MIN_RUNS_PER_CELL,
+    Rq4Config,
+    _run_unchecked,
+    run_rq4,
+    world_truth_fn,
+)
 from reval.uq.domain import ApplicabilityDomain
 
 A_MODEL = 0.5
@@ -55,9 +62,8 @@ def _truth(subject_params, limits) -> bool:
 def rows() -> pd.DataFrame:
     cfg = Rq4Config(
         seeds=(0, 1, 2), limit_offsets_k=(-5.0, 0.0), base_limits=LIMITS, popsize=8, maxiter=15,
-        min_runs_per_cell=1,
     )  # fmt: skip
-    return run_rq4(cfg, StubModel(), StubConformal(), _ad(), StubDriveMap(), BOUNDS, _truth)
+    return _run_unchecked(cfg, StubModel(), StubConformal(), _ad(), StubDriveMap(), BOUNDS, _truth)
 
 
 def test_every_cell_gets_n_rows(rows: pd.DataFrame) -> None:
@@ -83,5 +89,25 @@ def test_gated_acceptance_is_stricter_and_paired(rows: pd.DataFrame) -> None:
 
 
 def test_minimum_runs_enforced() -> None:
-    with pytest.raises(ValueError, match="min_runs_per_cell"):
-        Rq4Config(seeds=(0,), limit_offsets_k=(0.0,), base_limits=LIMITS, min_runs_per_cell=50)
+    small = Rq4Config(seeds=(0,), limit_offsets_k=(0.0,), base_limits=LIMITS)
+    with pytest.raises(ValueError, match="MIN_RUNS_PER_CELL"):
+        run_rq4(small, StubModel(), StubConformal(), _ad(), StubDriveMap(), BOUNDS, _truth)
+    assert MIN_RUNS_PER_CELL == 50
+
+
+def test_deterministic_for_same_seed() -> None:
+    cfg = Rq4Config(seeds=(4,), limit_offsets_k=(0.0,), base_limits=LIMITS, popsize=8, maxiter=10)
+    a = _run_unchecked(cfg, StubModel(), StubConformal(), _ad(), StubDriveMap(), BOUNDS, _truth)
+    b = _run_unchecked(cfg, StubModel(), StubConformal(), _ad(), StubDriveMap(), BOUNDS, _truth)
+    pd.testing.assert_frame_equal(a, b)
+
+
+def test_world_truth_fn_uses_world_peak() -> None:
+    class StubWorld:
+        def simulate(self, x: pd.DataFrame, physical: object) -> pd.DataFrame:
+            return pd.DataFrame({"pm": 0.6 * x["torque"].to_numpy()})
+
+    fn = world_truth_fn(StubWorld(), None, StubDriveMap())  # type: ignore[arg-type]
+    params = {"blocks": [[100.0, 1000.0, 10.0]], "coolant": 27.0, "ambient": 24.0}  # peak 60
+    assert fn(params, {"pm_peak_limit_degC": 50.0}) is True
+    assert fn(params, {"pm_peak_limit_degC": 60.0}) is False  # hitting the limit satisfies it

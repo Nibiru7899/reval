@@ -31,7 +31,9 @@ from bench.world.model import PhysicalParams, World
 VARIANTS: tuple[Literal["O1"], Literal["O3"]] = ("O1", "O3")
 ACCEPTANCE: tuple[str, str] = ("point", "gated")
 CELLS: tuple[str, ...] = tuple(f"{v}/{a}" for v in VARIANTS for a in ACCEPTANCE)
-POINT_TOL_K = 0.5  # DE solves the penalized problem only approximately (same slack as the optimizer tests)
+MIN_RUNS_PER_CELL = 50  # docs/06 section 6: N >= 50 optimizer runs per cell
+# Point rule only: DE solves the penalized problem approximately (same slack as the optimizer tests).
+POINT_TOL_K = 0.5
 
 TruthFn = Callable[[Mapping[str, Any], Mapping[str, float]], bool]  # (subject_params, limits) -> violated
 
@@ -45,26 +47,30 @@ class Rq4Config:
     base_limits: Mapping[str, float]
     popsize: int = 15
     maxiter: int = 50
-    min_runs_per_cell: int = 50
 
-    def __post_init__(self) -> None:
-        n = len(self.seeds) * len(self.limit_offsets_k)
-        if n < self.min_runs_per_cell:
-            raise ValueError(f"{n} runs per cell < min_runs_per_cell={self.min_runs_per_cell}")
+    @property
+    def runs_per_cell(self) -> int:
+        return len(self.seeds) * len(self.limit_offsets_k)
+
+    def validate(self) -> None:
+        """Reject a design below the pre-registered floor."""
+        if self.runs_per_cell < MIN_RUNS_PER_CELL:
+            raise ValueError(f"{self.runs_per_cell} runs per cell < MIN_RUNS_PER_CELL={MIN_RUNS_PER_CELL}")
 
 
 def load_config(path: Path) -> Rq4Config:
     """Read ``bench/configs/rq4.yaml``."""
     raw = yaml.safe_load(path.read_text(encoding="utf-8"))
     s = raw["seeds"]
-    return Rq4Config(
+    cfg = Rq4Config(
         seeds=tuple(range(int(s["start"]), int(s["start"]) + int(s["count"]))),
         limit_offsets_k=tuple(float(x) for x in raw["limit_offsets_k"]),
         base_limits={k: float(v) for k, v in raw["base_limits"].items()},
         popsize=int(raw["popsize"]),
         maxiter=int(raw["maxiter"]),
-        min_runs_per_cell=int(raw["min_runs_per_cell"]),
     )
+    cfg.validate()
+    return cfg
 
 
 def world_truth_fn(
@@ -94,7 +100,21 @@ def run_rq4(
     bounds: Sequence[tuple[float, float]],
     truth_fn: TruthFn,
 ) -> pd.DataFrame:
-    """Run the 2 x 2 experiment; one row per (cell, optimizer run)."""
+    """Run the 2 x 2 experiment (N >= MIN_RUNS_PER_CELL enforced); one row per (cell, optimizer run)."""
+    cfg.validate()
+    return _run_unchecked(cfg, model, conformal, ad, drive_map, bounds, truth_fn)
+
+
+def _run_unchecked(
+    cfg: Rq4Config,
+    model: Any,
+    conformal: Any,
+    ad: Any,
+    drive_map: Any,
+    bounds: Sequence[tuple[float, float]],
+    truth_fn: TruthFn,
+) -> pd.DataFrame:
+    """``run_rq4`` without the N floor; for small test fixtures only."""
     rows: list[dict[str, Any]] = []
     for variant in VARIANTS:
         for seed in cfg.seeds:
@@ -108,9 +128,7 @@ def run_rq4(
                 truth = bool(truth_fn(res.subject_params, limits))
                 accept = {
                     "point": res.pred_peak <= limit + POINT_TOL_K,
-                    "gated": res.upper is not None
-                    and res.upper <= limit + POINT_TOL_K
-                    and res.ad_report.inside,
+                    "gated": res.upper is not None and res.upper <= limit and res.ad_report.inside,
                 }
                 for rule in ACCEPTANCE:
                     rows.append(
@@ -137,8 +155,10 @@ def main(argv: Sequence[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", type=Path, default=Path("bench/configs/rq4.yaml"))
     cfg = load_config(ap.parse_args(argv).config)
-    n = len(cfg.seeds) * len(cfg.limit_offsets_k)
-    print(f"RQ4: {len(CELLS)} cells x {n} runs; call run_rq4() with the Tier B project's artifacts.")
+    print(
+        f"RQ4: {len(CELLS)} cells x {cfg.runs_per_cell} runs; "
+        "call run_rq4() with the Tier B project's artifacts."
+    )
 
 
 if __name__ == "__main__":

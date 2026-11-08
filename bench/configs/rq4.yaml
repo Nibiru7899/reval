@@ -8,4 +8,3 @@ limit_offsets_k: [-5.0, 0.0, 5.0]   # added to each base limit (K, a temperature
 base_limits: {pm_peak_limit_degC: 80.0, sw_peak_limit_degC: 130.0}
 popsize: 15
 maxiter: 50
-min_runs_per_cell: 50
