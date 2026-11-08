@@ -28,6 +28,20 @@ def test_ablation_config_changes_only_its_switch(name: str) -> None:
     assert cfg.name == name
 
 
+UQ_AD = {
+    "a4_ad_modes": {"ad_gate": "relaxed"},
+    "a5_fixed_margin": {"interval_method": "fixed_margin"},
+    "a8_cqr": {"interval_method": "cqr"},
+}
+
+
+@pytest.mark.parametrize("name", sorted(UQ_AD))
+def test_uq_ad_ablation_config_changes_only_its_switch(name: str) -> None:
+    cfg = load_config(ABLATIONS / f"{name}.yaml")
+    assert cfg.settings == DEFAULT_SETTINGS.model_copy(update=UQ_AD[name])
+    assert cfg.name == name
+
+
 @pytest.mark.slow
 @pytest.mark.parametrize("name", sorted(EXPECTED))
 def test_ablation_runs_on_mini_project(name: str, tmp_path: Path) -> None:

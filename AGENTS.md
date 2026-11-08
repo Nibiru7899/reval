@@ -77,6 +77,10 @@ Before declaring a task done, run: `ruff check`, `ruff format --check`, `mypy sr
    Use "supported by recorded evidence against the declared requirement". Every report includes the disclaimer.
 10. **Every reported number comes from a committed script.** No hand-edited result tables.
 
+11. **Bench-only ablations are forbidden for real use.** `ReValSettings(ad_gate="off")` and `ReValSettings(interval_method="fixed_margin")`
+    disable the applicability-domain gate and calibrated intervals. They are reachable only when `REVAL_BENCH=1` (`reval.sdk.context.require_bench_settings`
+    raises `PermissionError` otherwise) and must never be used outside `bench/`.
+
 ## Coding conventions
 
 - Python: type hints everywhere (`mypy --strict` on `core/` and `domain/`). Pydantic v2 `frozen=True` models for domain objects.

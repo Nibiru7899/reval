@@ -19,6 +19,7 @@ from motor import cycles, lptn
 from motor.features import add_derived, make_features
 from reval.domain.engineering import Subject, SubjectKind
 from reval.domain.evidence import EvidenceResult, Scope, Tolerance
+from reval.domain.settings import DEFAULT_SETTINGS
 from reval.errors import ProducerError
 from reval.sdk import Context, ProducerOutput, exact_result, interval_result
 from reval.uq.domain import ApplicabilityDomain, DomainReport, combine_reports
@@ -30,6 +31,11 @@ _STATE_COLUMNS = "measures[pm,stator_yoke,stator_tooth,stator_winding]"
 _BLOCKS = "motor.cycles:blocks"
 _RECORDED = "motor.cycles:recorded"
 _NODE = {"pm_peak": "pm", "sw_peak": "stator_winding"}
+# Ablations (bench only, docs/06 section 5): A4 relaxed gate = >= 99 % of timesteps inside the AD;
+# A5 fixed margin in K, a deliberately uncalibrated stand-in for the conformal half-width. It is tagged
+# "model_form" because the evidence schema has no uncalibrated kind.
+_RELAXED_INSIDE_FRAC = 0.99
+FIXED_MARGIN_K = 5.0
 
 
 def _is_duty_cycle(subject: Subject) -> bool:
@@ -311,13 +317,14 @@ def _applicability_domain(ctx: Context, artifact_id: str, uq: Any) -> Applicabil
     return ad
 
 
-def _check_model_domain(ad: ApplicabilityDomain, x: np.ndarray) -> DomainReport:
-    """Strict AD check of every row: range box and kNN distance (fail closed, docs/04 A4).
+def _check_model_domain(ad: ApplicabilityDomain, x: np.ndarray, gate: str = "strict") -> DomainReport:
+    """AD check of every row: range box and kNN distance (fail closed, docs/04 A4).
 
-    The kNN query is the expensive part. It runs in parallel inside ApplicabilityDomain, and its
-    results don't depend on the worker count, so no row is ever skipped.
+    Strict by default. ``relaxed`` (ablation A4) accepts >= 99 % of timesteps inside; ``off`` is gated
+    by the caller. The kNN query is the expensive part. It runs in parallel inside ApplicabilityDomain,
+    and its results don't depend on the worker count, so no row is ever skipped.
     """
-    return ad.check(x)
+    return ad.check(x, min_inside_frac=_RELAXED_INSIDE_FRAC) if gate == "relaxed" else ad.check(x)
 
 
 def _predict_peak(subject: Subject, ctx: Context, quantity: str, model_kind: str) -> ProducerOutput:
@@ -330,11 +337,24 @@ def _predict_peak(subject: Subject, ctx: Context, quantity: str, model_kind: str
     pred = model.predict(feats)[target].to_numpy(dtype=float)
     peak = float(pred.max())
     ad = _applicability_domain(ctx, uq_id, uq)
-    model_report = _check_model_domain(ad, feats[model.feature_names].to_numpy(dtype=float))
+    settings = getattr(ctx, "settings", DEFAULT_SETTINGS)  # test doubles may omit it
+    model_report = _check_model_domain(ad, feats[model.feature_names].to_numpy(dtype=float), settings.ad_gate)
     combined = combine_reports({"drive_map": dm_report, "model": model_report})
     inside = bool(combined["inside"])
+    if settings.ad_gate == "off":  # A4, bench only: the gate is disabled, the report stays for the record
+        inside = True
     cls = cycles.length_class(len(cycle) * cycles.DT_S)
-    iv = uq["conformal"].interval(target, peak, cls)
+    kind = "conformal"
+    if settings.interval_method == "fixed_margin":  # A5, bench only: point +- constant, no calibration
+        iv: tuple[float, float] | None = (peak - FIXED_MARGIN_K, peak + FIXED_MARGIN_K)
+        kind = "model_form"
+    elif settings.interval_method == "cqr":  # A8: needs a fitted CQR in the uq artifact
+        cqr = uq.get("cqr")
+        if cqr is None:
+            raise ValueError(f"interval_method='cqr' needs a 'cqr' entry in artifact {uq_id!r}")
+        iv = cqr.interval(target, peak, cls)
+    else:
+        iv = uq["conformal"].interval(target, peak, cls)
     if iv is None:  # q = inf: too few calibration windows, so no honest interval (docs/10 section 5)
         result = EvidenceResult(
             quantity=quantity,
@@ -351,7 +371,7 @@ def _predict_peak(subject: Subject, ctx: Context, quantity: str, model_kind: str
             peak,
             float(iv[0]),
             float(iv[1]),
-            uncertainty_kind="conformal",
+            uncertainty_kind=kind,  # type: ignore[arg-type]
             in_domain=inside,
             domain_report=combined,
         )

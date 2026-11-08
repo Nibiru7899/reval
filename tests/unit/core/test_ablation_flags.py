@@ -65,6 +65,36 @@ def test_a7_kappa_override_is_validated() -> None:
             ReValSettings(kappa_override=bad)
 
 
+def _ctx(settings: ReValSettings) -> Any:
+    from pathlib import Path
+    from types import SimpleNamespace
+
+    from reval.sdk.context import Context
+
+    return Context(Path("."), SimpleNamespace(), SimpleNamespace(depends_on=()), settings)  # type: ignore[arg-type]
+
+
+@pytest.mark.parametrize("kw", [{"ad_gate": "off"}, {"interval_method": "fixed_margin"}])
+def test_a4_a5_bench_only_settings_raise_without_reval_bench(
+    kw: Any, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("REVAL_BENCH", raising=False)
+    with pytest.raises(PermissionError, match="REVAL_BENCH"):
+        _ctx(ReValSettings(**kw))
+
+
+@pytest.mark.parametrize("kw", [{"ad_gate": "off"}, {"interval_method": "fixed_margin"}])
+def test_a4_a5_bench_only_settings_allowed_with_reval_bench(kw: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("REVAL_BENCH", "1")
+    assert _ctx(ReValSettings(**kw)).settings == ReValSettings(**kw)
+
+
+@pytest.mark.parametrize("kw", [{}, {"ad_gate": "relaxed"}, {"interval_method": "cqr"}])
+def test_a4_a8_other_settings_need_no_env(kw: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.delenv("REVAL_BENCH", raising=False)
+    _ctx(ReValSettings(**kw))
+
+
 def test_a3_no_scope_excuse(mini: Any) -> None:
     s0 = mini.snapshot()
     ev = run_all(mini, s0)

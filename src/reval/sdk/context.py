@@ -1,6 +1,7 @@
 """Execution context handed to producers; enforces declared dependencies (docs/10 §7, D11)."""
 
 import json
+import os
 from collections import OrderedDict
 from pathlib import Path
 from typing import Any
@@ -56,6 +57,22 @@ def _share(obj: Any) -> Any:
     return obj.copy(deep=False) if hasattr(obj, "copy") and hasattr(obj, "columns") else obj
 
 
+BENCH_ENV = "REVAL_BENCH"
+
+
+def require_bench_settings(settings: ReValSettings) -> None:
+    """Refuse ``ad_gate="off"`` and ``interval_method="fixed_margin"`` unless REVAL_BENCH=1 (AGENTS.md).
+
+    Lives in the SDK, not core: core never reads the environment. Fail closed on anything but "1".
+    """
+    if (settings.ad_gate == "off" or settings.interval_method == "fixed_margin") and (
+        os.environ.get(BENCH_ENV) != "1"
+    ):
+        raise PermissionError(
+            f"ad_gate='off' and interval_method='fixed_margin' are bench-only ablations; set {BENCH_ENV}=1"
+        )
+
+
 class Context:
     """Gives a producer access to exactly what it declared in ``depends_on`` and ``assumes``."""
 
@@ -69,6 +86,7 @@ class Context:
         self._root = Path(project_root)
         self._snapshot = snapshot
         self._producer = producer
+        require_bench_settings(settings)
         self._settings = settings
         self._deps = tuple(Selector.parse(s) for s in producer.depends_on)
 
