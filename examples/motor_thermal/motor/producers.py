@@ -348,11 +348,8 @@ def _predict_peak(subject: Subject, ctx: Context, quantity: str, model_kind: str
     if settings.interval_method == "fixed_margin":  # A5, bench only: point +- constant, no calibration
         iv: tuple[float, float] | None = (peak - FIXED_MARGIN_K, peak + FIXED_MARGIN_K)
         kind = "model_form"
-    elif settings.interval_method == "cqr":  # A8: needs a fitted CQR in the uq artifact
-        cqr = uq.get("cqr")
-        if cqr is None:
-            raise ValueError(f"interval_method='cqr' needs a 'cqr' entry in artifact {uq_id!r}")
-        iv = cqr.interval(target, peak, cls)
+    elif settings.interval_method == "cqr":  # A8: CQR needs lower/upper quantile predictions of the peak
+        raise ProducerError("interval_method=cqr needs quantile models; see Q-P5-19")
     else:
         iv = uq["conformal"].interval(target, peak, cls)
     if iv is None:  # q = inf: too few calibration windows, so no honest interval (docs/10 section 5)

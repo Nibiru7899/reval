@@ -107,3 +107,24 @@ def test_a3_no_scope_excuse(mini: Any) -> None:
     assert _all(ev, s0, s1)[("measure_temp", "S1")].cls is F.FRESH_OUT_OF_SCOPE
     off = _all(ev, s0, s1, settings=ReValSettings(scope_freshness=False))
     assert off[("measure_temp", "S1")].cls is F.INVALIDATED
+
+
+def test_settings_passed_to_project_open_reach_producers(mini: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Project.open(settings=...) -> Project.run -> run_producer -> Context.settings (A4/A5 plumbing)."""
+    from reval.sdk.registry import RegisteredProducer
+    from reval.services.project import Project
+
+    monkeypatch.setenv("REVAL_BENCH", "1")
+    wanted = ReValSettings(ad_gate="off", interval_method="fixed_margin")
+    proj = Project.open(mini.root, settings=wanted)
+    seen: list[ReValSettings] = []
+    (pid,) = [i for i in proj.registry._items if i.endswith(":predict_temp")]
+    rp = proj.registry._items[pid]
+
+    def spy(subject: Any, ctx: Any) -> Any:
+        seen.append(ctx.settings)
+        return rp.fn(subject, ctx)
+
+    proj.registry._items[pid] = RegisteredProducer(rp.meta, spy, rp.available_for)
+    proj.run(pid, "S1")
+    assert seen == [wanted]

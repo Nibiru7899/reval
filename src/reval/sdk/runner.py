@@ -7,7 +7,7 @@ from reval.core.canonical import content_id
 from reval.core.selectors import selector_hash
 from reval.domain.engineering import Subject
 from reval.domain.evidence import Dependency, Evidence, ProducerKind, Provenance, Scope
-from reval.domain.settings import DEFAULT_SETTINGS
+from reval.domain.settings import DEFAULT_SETTINGS, ReValSettings
 from reval.domain.snapshot import Snapshot
 from reval.errors import ProducerError, RevalError
 from reval.sdk.context import Context
@@ -34,6 +34,7 @@ def run_producer(
     subject: Subject,
     snapshot: Snapshot,
     project_root: Path,
+    settings: ReValSettings = DEFAULT_SETTINGS,
 ) -> tuple[Evidence, ...]:
     """Call the producer and return one Evidence per result, sorted by id.
 
@@ -47,7 +48,7 @@ def run_producer(
     if rp.available_for is not None and not rp.available_for(subject):
         raise ProducerError(f"producer {producer_id!r} is not available for subject {subject.id!r}")
 
-    ctx = Context(Path(project_root), snapshot, meta, DEFAULT_SETTINGS)
+    ctx = Context(Path(project_root), snapshot, meta, settings)
     try:
         output = rp.fn(subject, ctx)
     except RevalError:

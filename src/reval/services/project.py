@@ -314,7 +314,7 @@ class Project:
     def _run(self, snap: Snapshot, producer_id: str, subject: Subject) -> tuple[Evidence, ...]:
         if producer_id not in snap.producers:
             raise ProducerError(f"unknown producer {producer_id!r}")
-        evidence = run_producer(self.registry, producer_id, subject, snap, self.root)
+        evidence = run_producer(self.registry, producer_id, subject, snap, self.root, self.settings)
         for e in evidence:
             self.store.put_evidence(e)
         return evidence

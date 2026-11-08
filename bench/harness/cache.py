@@ -93,7 +93,7 @@ class ProducerResultCache:
             self.hits += 1
             return cached, True
         subject: Subject = snapshot.subjects[subject_id]
-        evidence = run_producer(project.registry, producer_id, subject, snapshot, project.root)
+        evidence = run_producer(project.registry, producer_id, subject, snapshot, project.root, settings)
         self.put(key, evidence)
         self.misses += 1
         return evidence, False

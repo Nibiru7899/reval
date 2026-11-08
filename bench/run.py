@@ -191,7 +191,7 @@ class BenchCache(ProducerResultCache):
         cached = self.get(key)
         if cached is None:
             evidence = run_producer(
-                project.registry, producer_id, snapshot.subjects[subject_id], snapshot, project.root
+                project.registry, producer_id, snapshot.subjects[subject_id], snapshot, project.root, settings
             )
             self.put(key, evidence)
             self.misses += 1
