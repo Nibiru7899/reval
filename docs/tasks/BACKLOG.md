@@ -133,7 +133,7 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | P5-12 | Statistics: stratified cluster bootstrap + non-inferiority | sonnet | P5-10 | done |
 | P5-13 | Ablation settings plumbing (A1, A2, A3, A6, A7) | sonnet | P5-11 | done |
 | P5-14 | Cost sensitivity | sonnet | P5-11 | done |
-| P5-15 | Figures and tables (scripted) | sonnet | P5-12, P5-13, P5-19, P5-14, P5-20 | todo |
+| P5-15 | Figures and tables (scripted) | sonnet | P5-12, P5-13, P5-19, P5-14, P5-20 | done |
 | P5-16 | Final run + archive (HUMAN REVIEW) | sonnet+human-review | P5-01, P5-15 | todo |
 | P5-17 | Pilot run on development seeds | sonnet+human-review | P5-11, P5-12, P5-13, P5-19, P5-14, P5-20 | todo |
 | P5-18 | Tier B base snapshots: ML retrained on world trajectories | sonnet | P5-05, P4-03 | done |
