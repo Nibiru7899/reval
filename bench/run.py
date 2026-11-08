@@ -112,11 +112,37 @@ class RunConfig(BaseModel):
     reval: RevalRunConfig = RevalRunConfig()
     settings: ReValSettings = DEFAULT_SETTINGS  # ablation switches A1-A3, A6, A7 (bench/configs/ablations)
     lptn_args: tuple[str, ...] = ("--max-profiles", "12", "--max-nfev", "60")
+    # Cost sensitivity (P5-14): every MEASUREMENT producer is priced at ``bench_cost`` (None: as declared).
+    # ``cost_profile`` tags the rows. Producer-cache keys ignore cost, so profiles reuse the evidence.
+    bench_cost: float | None = Field(default=None, gt=0)
+    cost_profile: str = "default"
     jobs: int = Field(default=4, ge=1)
 
 
 def load_config(path: Path) -> RunConfig:
     return RunConfig.model_validate(yaml.safe_load(Path(path).read_text(encoding="utf-8")))
+
+
+def load_cost_sensitivity(path: Path) -> list[RunConfig]:
+    """Expand a config with ``cost_profiles: {tag: bench_cost}`` into one ``RunConfig`` per profile."""
+    raw = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    profiles: dict[str, float] = raw.pop("cost_profiles")
+    return [
+        RunConfig.model_validate(
+            {**raw, "name": f"{raw['name']}_{tag}", "cost_profile": tag, "bench_cost": float(cost)}
+        )
+        for tag, cost in profiles.items()
+    ]
+
+
+def apply_cost_profile(project: Project, cfg: RunConfig) -> None:
+    """Re-price the bench (MEASUREMENT) producers of an opened project; call before taking a snapshot."""
+    if cfg.bench_cost is None:
+        return
+    reg = project.registry
+    for rp in reg.all():
+        if rp.meta.kind is ProducerKind.MEASUREMENT:
+            reg._items[rp.meta.id] = rp._replace(meta=rp.meta.model_copy(update={"cost": cfg.bench_cost}))
 
 
 def config_hash(cfg: RunConfig) -> str:
@@ -193,6 +219,7 @@ def rebind(evidence: Sequence[Evidence], project: Project, snapshot: Snapshot) -
             seed=seed,
         )
         fields = {k: getattr(e, k) for k in Evidence.model_fields if k not in ("id", "provenance")}
+        fields["cost"] = meta.cost  # a cost profile (P5-14) re-prices a cached run
         out.append(Evidence.create(**fields, provenance=prov))
     return tuple(sorted(out, key=lambda x: x.id))
 
@@ -532,6 +559,7 @@ def scenario_records(
 
     # --- S: the validated state before the change -----------------------------------------------------
     pre_project = Project.open(root)
+    apply_cost_profile(pre_project, cfg)
     snap_s = pre_project.snapshot(write_lock=True)
     ws.commit(f"S {sc.id}", lock=False)
     cache.salt = _salt(root, sc.tier, cfg.motor)
@@ -550,6 +578,7 @@ def scenario_records(
 
     t = time.perf_counter()
     post = Project.open(root, settings=cfg.settings)
+    apply_cost_profile(post, cfg)
     snap = post.snapshot(write_lock=True)
     ws.commit(f"S' {sc.id}", lock=False)
     cache.salt = _salt(root, sc.tier, cfg.motor)
@@ -622,6 +651,7 @@ def scenario_records(
                     n_bench_runs=int(n_bench),
                     ilp_cost=r.ilp_cost,
                     greedy_cost=r.greedy_cost,
+                    cost_profile=cfg.cost_profile,
                 )
             )
     return records
@@ -841,7 +871,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     ap.add_argument("--limit", type=int, default=None, help="run only the first N scenarios (debugging)")
     ap.add_argument("--summary", action="store_true", help="print the metrics table at the end")
     args = ap.parse_args(argv)
-    cfg = load_config(args.config)
+    if "cost_profiles" in yaml.safe_load(args.config.read_text(encoding="utf-8")):
+        codes = [
+            _main_one(c, args) for c in load_cost_sensitivity(args.config)
+        ]  # one run per bench cost, one shared producer cache
+        return max(codes)
+    return _main_one(load_config(args.config), args)
+
+
+def _main_one(cfg: RunConfig, args: argparse.Namespace) -> int:
     out = run_bench(
         cfg,
         jobs=args.jobs,

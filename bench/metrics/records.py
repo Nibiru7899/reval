@@ -44,6 +44,7 @@ class ClaimRecord:
     reproducible: bool | None = None
     ilp_cost: float | None = None
     greedy_cost: float | None = None
+    cost_profile: str = "default"  # P5-14: bench-cost profile of the run ("bench20", ...)
 
 
 _COLUMNS = [f.name for f in dataclasses.fields(ClaimRecord)]
