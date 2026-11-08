@@ -138,7 +138,7 @@ the check script (see the bottom). Edit the phase files, never the ID, title, ow
 | P5-17 | Pilot run on development seeds | sonnet+human-review | P5-11, P5-12, P5-13, P5-19, P5-14, P5-20 | todo |
 | P5-18 | Tier B base snapshots: ML retrained on world trajectories | sonnet | P5-05, P4-03 | done |
 | P5-19 | Uncertainty and AD ablations (A4, A5, A8) | sonnet | P5-13, P4-01 | review |
-| P5-20 | RQ4 optimizer experiment (Tier B, 2 × 2) | sonnet | P5-08, P5-18, P1-11 | todo |
+| P5-20 | RQ4 optimizer experiment (Tier B, 2 × 2) | sonnet | P5-08, P5-18, P1-11 | done |
 
 ## Phase 6 — Workspace + integration ([phase-6-workspace.md](phase-6-workspace.md))
 
