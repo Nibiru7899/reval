@@ -1,0 +1,6 @@
+load:
+  scale: 1.0
+shaft:
+  d_mm: 30.00
+sim:
+  gain: 2.0

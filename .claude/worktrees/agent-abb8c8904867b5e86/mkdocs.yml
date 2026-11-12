@@ -1,0 +1,136 @@
+site_name: ReVal
+site_description: Continuous validation of engineering decisions - which claims survive a change, and the cheapest way to re-prove the rest.
+docs_dir: docs
+# Pages live in docs/site/; the numbered design docs stay where they are and are linked from the nav, not copied.
+exclude_docs: |
+  tasks/
+  log/agent-brief.md
+  log/questions.md
+  log/README.md
+  log/20*-*.md
+  !log/2026-10-28-m4.md
+  !log/2026-10-28-m1.md
+  !log/2026-10-28-lptn.md
+  !log/2026-10-28-limits.md
+strict: true
+hooks:
+  - scripts/mkdocs_hooks.py
+
+theme:
+  name: material
+  font:
+    text: Inter
+    code: JetBrains Mono
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+
+extra_css:
+  - site/stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets:
+      base_path: ["."]
+      check_paths: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: google
+            show_root_heading: true
+            show_source: false
+            members_order: source
+            heading_level: 3
+            show_signature_annotations: true
+            separate_signature: true
+
+nav:
+  - Home: site/index.md
+  - Get started:
+      - Quickstart: site/quickstart.md
+      - Add ReVal to your project: site/tutorial-new-project.md
+      - Motor tutorial: site/motor-tutorial.md
+  - Concepts: site/concepts.md
+  - Reference:
+      - CLI: site/cli.md
+      - Python API: site/api.md
+      - FAQ and limitations: site/faq.md
+  - Design:
+      - Overview: site/design-docs.md
+      - 00 Vision: 00-vision.md
+      - 03 Domain model: 03-domain-model.md
+      - 04 Algorithms: 04-algorithms.md
+      - 05 Motor domain: 05-motor-domain.md
+      - 06 Evaluation: 06-evaluation.md
+      - 07 Roadmap: 07-roadmap.md
+      - 08 Risks: 08-risks.md
+      - 09 CLI, API and UI: 09-api-and-ui.md
+      - 10 Interfaces: 10-interfaces.md
+      - Other design docs:
+          - 01 Problem and prior art: 01-problem-and-prior-art.md
+          - 02 Architecture: 02-architecture.md
+  - Research:
+      - Overview: site/research.md
+      - Pre-registration: research/preregistration.md
+      - Prior-art summary: research/prior-art-summary.md
+      - Paper outline: research/paper-outline.md
+      - Logs:
+          - M1 reproduction: log/2026-10-28-m1.md
+          - LPTN identification: log/2026-10-28-lptn.md
+          - Declared limits: log/2026-10-28-limits.md
+          - M4 demo: log/2026-10-28-m4.md
+  - Decisions:
+      - ADR 0001 Deterministic core: adr/0001-deterministic-core.md
+      - ADR 0002 Fail-closed invalidation: adr/0002-fail-closed-invalidation.md
+      - ADR 0003 Local-first storage: adr/0003-local-first-storage.md
+      - ADR 0004 Manifest and decorators: adr/0004-manifest-and-decorators.md
+      - ADR 0005 Lock-file snapshots: adr/0005-lock-file-snapshots.md

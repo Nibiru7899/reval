@@ -1,0 +1,46 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "report-preview",
+      "runtimeExecutable": ".venv/Scripts/python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8765",
+        "--bind",
+        "127.0.0.1",
+        "--directory",
+        "examples/motor_thermal/.reval"
+      ],
+      "port": 8765
+    },
+    {
+      "name": "reval-api-motor",
+      "runtimeExecutable": ".venv/Scripts/reval",
+      "runtimeArgs": [
+        "serve",
+        "--project",
+        "examples/motor_thermal",
+        "--port",
+        "8011"
+      ],
+      "port": 8011,
+      "autoPort": false
+    },
+    {
+      "name": "web-dev",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "--prefix",
+        "web",
+        "run",
+        "dev"
+      ],
+      "port": 5173,
+      "env": {
+        "REVAL_API": "http://127.0.0.1:8011"
+      }
+    }
+  ]
+}

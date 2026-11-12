@@ -1,0 +1,116 @@
+/* ReVal docs: petrol ink + amber signal. Status is always shown with a symbol and a word, never by colour alone. */
+:root,
+[data-md-color-scheme="default"] {
+  --md-primary-fg-color: #0b3c49;
+  --md-primary-fg-color--light: #1d5a6b;
+  --md-primary-fg-color--dark: #072831;
+  --md-accent-fg-color: #b45f06;
+  --md-typeset-a-color: #0b5c73;
+  --reval-ok: #1b6e3c;
+  --reval-warn: #8a5a00;
+  --reval-bad: #a12a2a;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-hue: 200;
+  --md-primary-fg-color: #0d2f38;
+  --md-primary-fg-color--light: #1d5a6b;
+  --md-primary-fg-color--dark: #07191e;
+  --md-accent-fg-color: #f2b447;
+  --md-typeset-a-color: #6cc4dc;
+  --md-default-bg-color: #0f1b1f;
+  --md-default-fg-color--light: #b7c7cc;
+  --md-code-bg-color: #16262b;
+  --reval-ok: #62c58a;
+  --reval-warn: #f2b447;
+  --reval-bad: #f08080;
+}
+
+/* Logo-less wordmark: the site name, set in a tight monospace with an amber "Val". */
+.md-header__title .md-ellipsis:first-child,
+.md-nav__title .md-ellipsis {
+  font-family: "JetBrains Mono", ui-monospace, monospace;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.md-header__topic:first-child {
+  font-weight: 700;
+}
+
+.md-typeset h1 {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--md-default-fg-color);
+}
+
+.md-typeset h2 {
+  letter-spacing: -0.01em;
+  margin-top: 2.2em;
+}
+
+.md-typeset table:not([class]) {
+  font-size: 0.78rem;
+  border-radius: 6px;
+}
+
+.md-typeset code {
+  border-radius: 4px;
+}
+
+/* Status chips: symbol + word. */
+.st {
+  display: inline-block;
+  padding: 0 0.55em;
+  border-radius: 999px;
+  border: 1px solid currentColor;
+  font-size: 0.78em;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.st-ok { color: var(--reval-ok); }
+.st-warn { color: var(--reval-warn); }
+.st-bad { color: var(--reval-bad); }
+
+.hero {
+  padding: 1.2rem 0 0.4rem;
+}
+.hero p.tagline {
+  font-size: 1.15rem;
+  line-height: 1.5;
+  max-width: 38rem;
+}
+.md-typeset .grid.cards > ul > li {
+  border-radius: 8px;
+}
+.md-typeset pre > code {
+  font-size: 0.78em;
+}
+
+/* Buttons: readable in both schemes (the slate primary is too close to the page background). */
+.md-typeset .md-button {
+  border-radius: 6px;
+  font-weight: 600;
+  color: var(--md-typeset-a-color);
+  border-color: var(--md-typeset-a-color);
+}
+.md-typeset .md-button--primary {
+  color: #fff;
+  background-color: #0b5c73;
+  border-color: #0b5c73;
+}
+[data-md-color-scheme="slate"] .md-typeset .md-button--primary {
+  color: #0f1b1f;
+  background-color: var(--md-accent-fg-color);
+  border-color: var(--md-accent-fg-color);
+}
+.md-typeset .md-button:hover,
+.md-typeset .md-button:focus {
+  color: #fff;
+  background-color: var(--md-accent-fg-color);
+  border-color: var(--md-accent-fg-color);
+}
+[data-md-color-scheme="slate"] .md-typeset .md-button:hover,
+[data-md-color-scheme="slate"] .md-typeset .md-button:focus {
+  color: #0f1b1f;
+}

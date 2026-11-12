@@ -1,0 +1,6 @@
+beam:
+  load_N: 600       # tip load
+  length_mm: 500
+  width_mm: 40
+  height_mm: 20
+  E_MPa: 70000      # aluminium

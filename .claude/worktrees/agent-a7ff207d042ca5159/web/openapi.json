@@ -1,0 +1,3421 @@
+{
+  "components": {
+    "schemas": {
+      "Artifact": {
+        "additionalProperties": false,
+        "description": "A tracked file. ``derived_from`` is the constructive trace (artifact ids).",
+        "properties": {
+          "derived_from": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Derived From",
+            "type": "array"
+          },
+          "hasher": {
+            "enum": [
+              "file",
+              "yaml-fields",
+              "dataframe",
+              "model"
+            ],
+            "title": "Hasher",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "key": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Key",
+            "type": "array"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ArtifactKind"
+          },
+          "path": {
+            "title": "Path",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "path",
+          "hasher"
+        ],
+        "title": "Artifact",
+        "type": "object"
+      },
+      "ArtifactKind": {
+        "enum": [
+          "dataset",
+          "model",
+          "params",
+          "code",
+          "document"
+        ],
+        "title": "ArtifactKind",
+        "type": "string"
+      },
+      "ArtifactVersion": {
+        "additionalProperties": false,
+        "description": "Hashes of an artifact at one snapshot; ``content_hash == \"missing\"`` if the file is absent.",
+        "properties": {
+          "artifact_id": {
+            "title": "Artifact Id",
+            "type": "string"
+          },
+          "content_hash": {
+            "title": "Content Hash",
+            "type": "string"
+          },
+          "field_hashes": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Field Hashes",
+            "type": "object"
+          },
+          "field_values": {
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "default": {},
+            "title": "Field Values",
+            "type": "object"
+          },
+          "row_groups": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/RowGroupInfo"
+            },
+            "default": {},
+            "title": "Row Groups",
+            "type": "object"
+          }
+        },
+        "required": [
+          "artifact_id",
+          "content_hash"
+        ],
+        "title": "ArtifactVersion",
+        "type": "object"
+      },
+      "Assessment": {
+        "additionalProperties": false,
+        "properties": {
+          "claim_id": {
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceUse"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "input_hash": {
+            "title": "Input Hash",
+            "type": "string"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "satisfied_clause": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Satisfied Clause"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/Status"
+          }
+        },
+        "required": [
+          "claim_id",
+          "snapshot_id",
+          "status",
+          "reasons",
+          "evidence",
+          "input_hash"
+        ],
+        "title": "Assessment",
+        "type": "object"
+      },
+      "Assumption": {
+        "additionalProperties": false,
+        "description": "Either a bounded variable (``bounds``) or a nominal ``value`` with optional ``tol``.",
+        "properties": {
+          "bounds": {
+            "anyOf": [
+              {
+                "maxItems": 2,
+                "minItems": 2,
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bounds"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "statement": {
+            "title": "Statement",
+            "type": "string"
+          },
+          "tol": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tol"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "variable": {
+            "title": "Variable",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "statement",
+          "variable",
+          "unit"
+        ],
+        "title": "Assumption",
+        "type": "object"
+      },
+      "Change": {
+        "additionalProperties": false,
+        "properties": {
+          "columns": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Columns",
+            "type": "array"
+          },
+          "delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "groups": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Groups",
+            "type": "array"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ChangeKind"
+          },
+          "new": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New"
+          },
+          "old": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "integer"
+              },
+              {
+                "type": "string"
+              },
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old"
+          },
+          "rows_bbox": {
+            "anyOf": [
+              {
+                "additionalProperties": {
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "prefixItems": [
+                    {
+                      "type": "number"
+                    },
+                    {
+                      "type": "number"
+                    }
+                  ],
+                  "type": "array"
+                },
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rows Bbox"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "target"
+        ],
+        "title": "Change",
+        "type": "object"
+      },
+      "ChangeKind": {
+        "enum": [
+          "field_changed",
+          "field_added",
+          "field_removed",
+          "rows_added",
+          "rows_modified",
+          "rows_removed",
+          "artifact_added",
+          "artifact_removed",
+          "artifact_changed",
+          "requirement_changed",
+          "assumption_changed",
+          "policy_changed",
+          "subject_changed",
+          "claim_changed",
+          "producer_code_changed",
+          "unknown"
+        ],
+        "title": "ChangeKind",
+        "type": "string"
+      },
+      "ChangeSet": {
+        "additionalProperties": false,
+        "properties": {
+          "changes": {
+            "items": {
+              "$ref": "#/components/schemas/Change"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "from_snapshot": {
+            "title": "From Snapshot",
+            "type": "string"
+          },
+          "to_snapshot": {
+            "title": "To Snapshot",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from_snapshot",
+          "to_snapshot",
+          "changes"
+        ],
+        "title": "ChangeSet",
+        "type": "object"
+      },
+      "Claim": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "policy_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Policy Id"
+          },
+          "requirement_id": {
+            "title": "Requirement Id",
+            "type": "string"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "requirement_id",
+          "subject_id"
+        ],
+        "title": "Claim",
+        "type": "object"
+      },
+      "Comparator": {
+        "enum": [
+          "<=",
+          ">="
+        ],
+        "title": "Comparator",
+        "type": "string"
+      },
+      "Criticality": {
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "Criticality",
+        "type": "string"
+      },
+      "Dependency": {
+        "additionalProperties": false,
+        "properties": {
+          "selector": {
+            "title": "Selector",
+            "type": "string"
+          },
+          "version_hash": {
+            "title": "Version Hash",
+            "type": "string"
+          }
+        },
+        "required": [
+          "selector",
+          "version_hash"
+        ],
+        "title": "Dependency",
+        "type": "object"
+      },
+      "DiffResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "affected_claims": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Affected Claims",
+            "type": "array"
+          },
+          "after": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Assessment"
+            },
+            "title": "After",
+            "type": "object"
+          },
+          "before": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Assessment"
+            },
+            "title": "Before",
+            "type": "object"
+          },
+          "changes": {
+            "$ref": "#/components/schemas/ChangeSet"
+          },
+          "freshness": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/FreshnessEntry"
+            },
+            "title": "Freshness",
+            "type": "object"
+          },
+          "from_snapshot": {
+            "title": "From Snapshot",
+            "type": "string"
+          },
+          "to_snapshot": {
+            "title": "To Snapshot",
+            "type": "string"
+          }
+        },
+        "required": [
+          "from_snapshot",
+          "to_snapshot",
+          "changes",
+          "freshness",
+          "before",
+          "after",
+          "affected_claims"
+        ],
+        "title": "DiffResponse",
+        "type": "object"
+      },
+      "Evidence": {
+        "additionalProperties": false,
+        "description": "One recorded result. ``id == content_id(self)``; no timestamps, so the id is pure content.",
+        "properties": {
+          "cost": {
+            "title": "Cost",
+            "type": "number"
+          },
+          "deps": {
+            "items": {
+              "$ref": "#/components/schemas/Dependency"
+            },
+            "title": "Deps",
+            "type": "array"
+          },
+          "derived_from_evidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derived From Evidence"
+          },
+          "fidelity": {
+            "title": "Fidelity",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "producer_id": {
+            "title": "Producer Id",
+            "type": "string"
+          },
+          "producer_kind": {
+            "$ref": "#/components/schemas/ProducerKind"
+          },
+          "provenance": {
+            "$ref": "#/components/schemas/Provenance"
+          },
+          "result": {
+            "$ref": "#/components/schemas/EvidenceResult"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/Scope",
+            "default": {
+              "assumption_ids": [],
+              "box": {}
+            }
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "tolerances": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/Tolerance"
+            },
+            "title": "Tolerances",
+            "type": "array"
+          },
+          "waiver": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Waiver"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "producer_id",
+          "producer_kind",
+          "fidelity",
+          "subject_id",
+          "result",
+          "deps",
+          "provenance",
+          "cost"
+        ],
+        "title": "Evidence",
+        "type": "object"
+      },
+      "EvidenceRequirement": {
+        "additionalProperties": false,
+        "properties": {
+          "in_domain": {
+            "default": false,
+            "title": "In Domain",
+            "type": "boolean"
+          },
+          "independent_of": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ProducerKind"
+            },
+            "title": "Independent Of",
+            "type": "array"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ProducerKind"
+          },
+          "min_fidelity": {
+            "default": 0,
+            "title": "Min Fidelity",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "EvidenceRequirement",
+        "type": "object"
+      },
+      "EvidenceResult": {
+        "additionalProperties": false,
+        "properties": {
+          "domain_report": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Domain Report"
+          },
+          "in_domain": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "In Domain"
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Interval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "point": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "string"
+          },
+          "uncertainty_kind": {
+            "default": "none",
+            "enum": [
+              "conformal",
+              "sensor",
+              "model_form",
+              "exact",
+              "none"
+            ],
+            "title": "Uncertainty Kind",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "quantity",
+          "unit"
+        ],
+        "title": "EvidenceResult",
+        "type": "object"
+      },
+      "EvidenceUse": {
+        "additionalProperties": false,
+        "properties": {
+          "derived_from_evidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derived From Evidence"
+          },
+          "evidence_id": {
+            "title": "Evidence Id",
+            "type": "string"
+          },
+          "freshness": {
+            "$ref": "#/components/schemas/FreshnessClass"
+          },
+          "interval_used": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Interval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "recorded_verdict": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Verdict"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "used_in_clause": {
+            "default": false,
+            "title": "Used In Clause",
+            "type": "boolean"
+          },
+          "verdict": {
+            "$ref": "#/components/schemas/Verdict"
+          }
+        },
+        "required": [
+          "evidence_id",
+          "verdict",
+          "freshness"
+        ],
+        "title": "EvidenceUse",
+        "type": "object"
+      },
+      "FreshnessClass": {
+        "description": "How an evidence item recorded at snapshot S relates to snapshot S'.",
+        "enum": [
+          "fresh_exact",
+          "fresh_out_of_scope",
+          "carry_forward",
+          "invalidated"
+        ],
+        "title": "FreshnessClass",
+        "type": "string"
+      },
+      "FreshnessEntry": {
+        "additionalProperties": false,
+        "properties": {
+          "cls": {
+            "$ref": "#/components/schemas/FreshnessClass"
+          },
+          "inflation": {
+            "title": "Inflation",
+            "type": "number"
+          },
+          "reasons": {
+            "items": {
+              "$ref": "#/components/schemas/Reason"
+            },
+            "title": "Reasons",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cls",
+          "inflation",
+          "reasons"
+        ],
+        "title": "FreshnessEntry",
+        "type": "object"
+      },
+      "GraphEdge": {
+        "additionalProperties": false,
+        "properties": {
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "target",
+          "type"
+        ],
+        "title": "GraphEdge",
+        "type": "object"
+      },
+      "GraphNode": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Status"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "label"
+        ],
+        "title": "GraphNode",
+        "type": "object"
+      },
+      "GraphResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "edges": {
+            "items": {
+              "$ref": "#/components/schemas/GraphEdge"
+            },
+            "title": "Edges",
+            "type": "array"
+          },
+          "nodes": {
+            "items": {
+              "$ref": "#/components/schemas/GraphNode"
+            },
+            "title": "Nodes",
+            "type": "array"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "snapshot_id",
+          "nodes",
+          "edges"
+        ],
+        "title": "GraphResponse",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "Health": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "version"
+        ],
+        "title": "Health",
+        "type": "object"
+      },
+      "Interval": {
+        "additionalProperties": false,
+        "description": "Closed interval [lo, hi] in `unit`, the quantity's canonical unit.",
+        "properties": {
+          "hi": {
+            "title": "Hi",
+            "type": "number"
+          },
+          "lo": {
+            "title": "Lo",
+            "type": "number"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "lo",
+          "hi",
+          "unit"
+        ],
+        "title": "Interval",
+        "type": "object"
+      },
+      "Job": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "run_plan",
+              "run"
+            ],
+            "title": "Kind",
+            "type": "string"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
+          "result": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result"
+          },
+          "state": {
+            "$ref": "#/components/schemas/JobState"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "state",
+          "payload"
+        ],
+        "title": "Job",
+        "type": "object"
+      },
+      "JobRef": {
+        "additionalProperties": false,
+        "properties": {
+          "job_id": {
+            "title": "Job Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "job_id"
+        ],
+        "title": "JobRef",
+        "type": "object"
+      },
+      "JobState": {
+        "enum": [
+          "queued",
+          "running",
+          "succeeded",
+          "failed"
+        ],
+        "title": "JobState",
+        "type": "string"
+      },
+      "Justification": {
+        "additionalProperties": false,
+        "properties": {
+          "claim_id": {
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "claim_id",
+          "snapshot_id",
+          "text"
+        ],
+        "title": "Justification",
+        "type": "object"
+      },
+      "PlanRequest": {
+        "additionalProperties": false,
+        "properties": {
+          "budget": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget"
+          },
+          "planner": {
+            "default": "ilp",
+            "enum": [
+              "ilp",
+              "greedy",
+              "all"
+            ],
+            "title": "Planner",
+            "type": "string"
+          },
+          "snapshot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot"
+          }
+        },
+        "title": "PlanRequest",
+        "type": "object"
+      },
+      "PlannedRun": {
+        "additionalProperties": false,
+        "properties": {
+          "candidate_id": {
+            "title": "Candidate Id",
+            "type": "string"
+          },
+          "cost": {
+            "title": "Cost",
+            "type": "number"
+          },
+          "discharges": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Discharges",
+            "type": "array"
+          },
+          "p_decisive": {
+            "default": 1.0,
+            "exclusiveMinimum": 0.0,
+            "maximum": 1.0,
+            "title": "P Decisive",
+            "type": "number"
+          },
+          "producer_id": {
+            "title": "Producer Id",
+            "type": "string"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "candidate_id",
+          "producer_id",
+          "subject_id",
+          "cost",
+          "discharges"
+        ],
+        "title": "PlannedRun",
+        "type": "object"
+      },
+      "Policy": {
+        "additionalProperties": false,
+        "description": "OR of ANDs: any one clause (1..3 conjuncts) of fresh passing evidence supports the claim.",
+        "properties": {
+          "alternatives": {
+            "items": {
+              "items": {
+                "$ref": "#/components/schemas/EvidenceRequirement"
+              },
+              "type": "array"
+            },
+            "title": "Alternatives",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "alternatives"
+        ],
+        "title": "Policy",
+        "type": "object"
+      },
+      "Producer": {
+        "additionalProperties": false,
+        "description": "Metadata of a registered evidence producer.",
+        "properties": {
+          "assumes": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumes",
+            "type": "array"
+          },
+          "code_hash": {
+            "title": "Code Hash",
+            "type": "string"
+          },
+          "cost": {
+            "title": "Cost",
+            "type": "number"
+          },
+          "depends_on": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Depends On",
+            "type": "array"
+          },
+          "fidelity": {
+            "title": "Fidelity",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ProducerKind"
+          },
+          "predictors": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Predictors",
+            "type": "array"
+          },
+          "quantities": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Quantities",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "quantities",
+          "fidelity",
+          "cost",
+          "code_hash",
+          "depends_on"
+        ],
+        "title": "Producer",
+        "type": "object"
+      },
+      "ProducerKind": {
+        "enum": [
+          "ml_prediction",
+          "physics_sim",
+          "measurement",
+          "analytic",
+          "waiver"
+        ],
+        "title": "ProducerKind",
+        "type": "string"
+      },
+      "ProjectInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "claims": {
+            "title": "Claims",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "claims"
+        ],
+        "title": "ProjectInfo",
+        "type": "object"
+      },
+      "Provenance": {
+        "additionalProperties": false,
+        "properties": {
+          "env": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "title": "Env",
+            "type": "object"
+          },
+          "producer_code_hash": {
+            "title": "Producer Code Hash",
+            "type": "string"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "producer_code_hash",
+          "snapshot_id"
+        ],
+        "title": "Provenance",
+        "type": "object"
+      },
+      "Reason": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "$ref": "#/components/schemas/ReasonCode"
+          },
+          "detail": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Detail",
+            "type": "object"
+          },
+          "evidence_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "Reason",
+        "type": "object"
+      },
+      "ReasonCode": {
+        "description": "Machine-readable reasons; table with meanings in docs/03-domain-model.md \u00a76.",
+        "enum": [
+          "policy_satisfied",
+          "waiver_applied",
+          "requirement_violated",
+          "conflicting_evidence",
+          "no_evidence",
+          "out_of_domain",
+          "margin_below_uncertainty",
+          "policy_unmet",
+          "evidence_invalidated",
+          "unknown_change",
+          "missing_tolerance",
+          "requirement_changed"
+        ],
+        "title": "ReasonCode",
+        "type": "string"
+      },
+      "Report": {
+        "additionalProperties": false,
+        "properties": {
+          "changes": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReportChange"
+            },
+            "title": "Changes",
+            "type": "array"
+          },
+          "claims": {
+            "items": {
+              "$ref": "#/components/schemas/ReportClaim"
+            },
+            "title": "Claims",
+            "type": "array"
+          },
+          "created_at": {
+            "title": "Created At",
+            "type": "string"
+          },
+          "disclaimer": {
+            "title": "Disclaimer",
+            "type": "string"
+          },
+          "git_rev": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Git Rev"
+          },
+          "hashes": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Hashes",
+            "type": "object"
+          },
+          "plan": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReportPlan"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "project": {
+            "title": "Project",
+            "type": "string"
+          },
+          "report_hash": {
+            "title": "Report Hash",
+            "type": "string"
+          },
+          "report_id": {
+            "title": "Report Id",
+            "type": "string"
+          },
+          "reval_version": {
+            "title": "Reval Version",
+            "type": "string"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "summary": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Summary",
+            "type": "object"
+          }
+        },
+        "required": [
+          "report_id",
+          "created_at",
+          "reval_version",
+          "project",
+          "snapshot_id",
+          "disclaimer",
+          "summary",
+          "claims",
+          "hashes",
+          "report_hash"
+        ],
+        "title": "Report",
+        "type": "object"
+      },
+      "ReportChange": {
+        "additionalProperties": false,
+        "properties": {
+          "delta": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Delta"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detail"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "new": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "New"
+          },
+          "old": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Old"
+          },
+          "target": {
+            "title": "Target",
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "target"
+        ],
+        "title": "ReportChange",
+        "type": "object"
+      },
+      "ReportClaim": {
+        "additionalProperties": false,
+        "properties": {
+          "criticality": {
+            "title": "Criticality",
+            "type": "string"
+          },
+          "evidence": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReportEvidence"
+            },
+            "title": "Evidence",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "input_hash": {
+            "title": "Input Hash",
+            "type": "string"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "number"
+          },
+          "op": {
+            "title": "Op",
+            "type": "string"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "string"
+          },
+          "reasons": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReportReason"
+            },
+            "title": "Reasons",
+            "type": "array"
+          },
+          "requirement": {
+            "title": "Requirement",
+            "type": "string"
+          },
+          "requirement_id": {
+            "title": "Requirement Id",
+            "type": "string"
+          },
+          "satisfied_clause": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Satisfied Clause"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "subject": {
+            "title": "Subject",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "requirement_id",
+          "requirement",
+          "quantity",
+          "op",
+          "limit",
+          "unit",
+          "criticality",
+          "subject",
+          "status",
+          "input_hash"
+        ],
+        "title": "ReportClaim",
+        "type": "object"
+      },
+      "ReportEvidence": {
+        "additionalProperties": false,
+        "properties": {
+          "derived_from_evidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Derived From Evidence"
+          },
+          "freshness": {
+            "title": "Freshness",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "interval": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Interval"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "point": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Point"
+          },
+          "producer": {
+            "title": "Producer",
+            "type": "string"
+          },
+          "producer_kind": {
+            "title": "Producer Kind",
+            "type": "string"
+          },
+          "provenance": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Provenance",
+            "type": "object"
+          },
+          "recorded_verdict": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recorded Verdict"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          },
+          "used_in_clause": {
+            "default": false,
+            "title": "Used In Clause",
+            "type": "boolean"
+          },
+          "verdict": {
+            "title": "Verdict",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "producer",
+          "producer_kind",
+          "subject_id",
+          "verdict",
+          "freshness"
+        ],
+        "title": "ReportEvidence",
+        "type": "object"
+      },
+      "ReportPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "budget": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget"
+          },
+          "deferred": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Deferred",
+            "type": "array"
+          },
+          "objective": {
+            "title": "Objective",
+            "type": "string"
+          },
+          "plan_id": {
+            "title": "Plan Id",
+            "type": "string"
+          },
+          "planner": {
+            "title": "Planner",
+            "type": "string"
+          },
+          "runs": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/ReportPlanRun"
+            },
+            "title": "Runs",
+            "type": "array"
+          },
+          "solver_status": {
+            "title": "Solver Status",
+            "type": "string"
+          },
+          "total_cost": {
+            "title": "Total Cost",
+            "type": "number"
+          },
+          "unrestorable": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Unrestorable",
+            "type": "array"
+          }
+        },
+        "required": [
+          "plan_id",
+          "planner",
+          "objective",
+          "solver_status",
+          "total_cost"
+        ],
+        "title": "ReportPlan",
+        "type": "object"
+      },
+      "ReportPlanRun": {
+        "additionalProperties": false,
+        "properties": {
+          "cost": {
+            "title": "Cost",
+            "type": "number"
+          },
+          "discharges": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Discharges",
+            "type": "array"
+          },
+          "producer_id": {
+            "title": "Producer Id",
+            "type": "string"
+          },
+          "subject_id": {
+            "title": "Subject Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "producer_id",
+          "subject_id",
+          "cost"
+        ],
+        "title": "ReportPlanRun",
+        "type": "object"
+      },
+      "ReportReason": {
+        "additionalProperties": false,
+        "properties": {
+          "code": {
+            "title": "Code",
+            "type": "string"
+          },
+          "evidence_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "code",
+          "message"
+        ],
+        "title": "ReportReason",
+        "type": "object"
+      },
+      "Requirement": {
+        "additionalProperties": false,
+        "description": "``limit`` is absolute and in the canonical unit of ``quantity``.",
+        "properties": {
+          "criticality": {
+            "$ref": "#/components/schemas/Criticality"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "number"
+          },
+          "op": {
+            "$ref": "#/components/schemas/Comparator"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          },
+          "unit": {
+            "title": "Unit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "quantity",
+          "op",
+          "limit",
+          "unit",
+          "criticality"
+        ],
+        "title": "Requirement",
+        "type": "object"
+      },
+      "RevalidationPlan": {
+        "additionalProperties": false,
+        "properties": {
+          "budget": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget"
+          },
+          "chosen_clauses": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Chosen Clauses",
+            "type": "object"
+          },
+          "deferred": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Deferred",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "objective": {
+            "enum": [
+              "min_cost",
+              "max_restored"
+            ],
+            "title": "Objective",
+            "type": "string"
+          },
+          "planner": {
+            "enum": [
+              "ilp",
+              "greedy",
+              "all"
+            ],
+            "title": "Planner",
+            "type": "string"
+          },
+          "reproducible": {
+            "default": true,
+            "title": "Reproducible",
+            "type": "boolean"
+          },
+          "runs": {
+            "items": {
+              "$ref": "#/components/schemas/PlannedRun"
+            },
+            "title": "Runs",
+            "type": "array"
+          },
+          "snapshot_id": {
+            "title": "Snapshot Id",
+            "type": "string"
+          },
+          "solver_status": {
+            "title": "Solver Status",
+            "type": "string"
+          },
+          "total_cost": {
+            "title": "Total Cost",
+            "type": "number"
+          },
+          "unrestorable": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Unrestorable",
+            "type": "array"
+          }
+        },
+        "required": [
+          "id",
+          "snapshot_id",
+          "planner",
+          "objective",
+          "runs",
+          "total_cost",
+          "chosen_clauses",
+          "unrestorable",
+          "solver_status"
+        ],
+        "title": "RevalidationPlan",
+        "type": "object"
+      },
+      "RowGroupInfo": {
+        "additionalProperties": false,
+        "properties": {
+          "bbox": {
+            "additionalProperties": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "title": "Bbox",
+            "type": "object"
+          },
+          "n_rows": {
+            "title": "N Rows",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "n_rows",
+          "bbox"
+        ],
+        "title": "RowGroupInfo",
+        "type": "object"
+      },
+      "Scope": {
+        "additionalProperties": false,
+        "properties": {
+          "assumption_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Assumption Ids",
+            "type": "array"
+          },
+          "box": {
+            "additionalProperties": {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ],
+              "type": "array"
+            },
+            "default": {},
+            "title": "Box",
+            "type": "object"
+          }
+        },
+        "title": "Scope",
+        "type": "object"
+      },
+      "Snapshot": {
+        "additionalProperties": false,
+        "description": "``id`` is the content hash of everything except ``id`` and the informational ``git_rev``.",
+        "properties": {
+          "artifacts": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Artifact"
+            },
+            "title": "Artifacts",
+            "type": "object"
+          },
+          "assumptions": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Assumption"
+            },
+            "title": "Assumptions",
+            "type": "object"
+          },
+          "claims": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Claim"
+            },
+            "title": "Claims",
+            "type": "object"
+          },
+          "git_rev": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Git Rev"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "manifest_hash": {
+            "title": "Manifest Hash",
+            "type": "string"
+          },
+          "policies": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Policy"
+            },
+            "title": "Policies",
+            "type": "object"
+          },
+          "producers": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Producer"
+            },
+            "title": "Producers",
+            "type": "object"
+          },
+          "quantities": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "title": "Quantities",
+            "type": "object"
+          },
+          "requirements": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Requirement"
+            },
+            "title": "Requirements",
+            "type": "object"
+          },
+          "subjects": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/Subject"
+            },
+            "title": "Subjects",
+            "type": "object"
+          },
+          "versions": {
+            "additionalProperties": {
+              "$ref": "#/components/schemas/ArtifactVersion"
+            },
+            "title": "Versions",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "manifest_hash",
+          "quantities",
+          "artifacts",
+          "versions",
+          "assumptions",
+          "requirements",
+          "subjects",
+          "claims",
+          "policies",
+          "producers"
+        ],
+        "title": "Snapshot",
+        "type": "object"
+      },
+      "SnapshotRef": {
+        "additionalProperties": false,
+        "properties": {
+          "snapshot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Snapshot"
+          }
+        },
+        "title": "SnapshotRef",
+        "type": "object"
+      },
+      "SnapshotSummary": {
+        "additionalProperties": false,
+        "properties": {
+          "claims": {
+            "title": "Claims",
+            "type": "integer"
+          },
+          "git_rev": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Git Rev"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "git_rev",
+          "claims"
+        ],
+        "title": "SnapshotSummary",
+        "type": "object"
+      },
+      "Status": {
+        "description": "Claim status.\n\nDeclaration order is NOT the evaluation order; the rules (VIOLATED \u2192 STALE (lost fail) \u2192 WAIVED\n\u2192 SUPPORTED \u2192 STALE \u2192 INCONCLUSIVE) are in docs/03-domain-model.md \u00a73.",
+        "enum": [
+          "violated",
+          "waived",
+          "supported",
+          "stale",
+          "inconclusive"
+        ],
+        "title": "Status",
+        "type": "string"
+      },
+      "Subject": {
+        "additionalProperties": false,
+        "properties": {
+          "generator": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generator"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SubjectKind"
+          },
+          "params": {
+            "additionalProperties": true,
+            "default": {},
+            "title": "Params",
+            "type": "object"
+          }
+        },
+        "required": [
+          "id",
+          "kind"
+        ],
+        "title": "Subject",
+        "type": "object"
+      },
+      "SubjectKind": {
+        "enum": [
+          "duty_cycle",
+          "design",
+          "operating_point"
+        ],
+        "title": "SubjectKind",
+        "type": "string"
+      },
+      "Tolerance": {
+        "additionalProperties": false,
+        "description": "Declared sensitivity of an output to a params field; kappa is applied once, at inflation.",
+        "properties": {
+          "assumption_id": {
+            "title": "Assumption Id",
+            "type": "string"
+          },
+          "input_unit": {
+            "title": "Input Unit",
+            "type": "string"
+          },
+          "output_unit": {
+            "title": "Output Unit",
+            "type": "string"
+          },
+          "safety_factor": {
+            "default": 1.5,
+            "title": "Safety Factor",
+            "type": "number"
+          },
+          "selector": {
+            "title": "Selector",
+            "type": "string"
+          },
+          "sensitivity": {
+            "title": "Sensitivity",
+            "type": "number"
+          },
+          "source": {
+            "title": "Source",
+            "type": "string"
+          },
+          "valid_range": {
+            "maxItems": 2,
+            "minItems": 2,
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "title": "Valid Range",
+            "type": "array"
+          }
+        },
+        "required": [
+          "selector",
+          "sensitivity",
+          "input_unit",
+          "output_unit",
+          "valid_range",
+          "source",
+          "assumption_id"
+        ],
+        "title": "Tolerance",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      },
+      "Verdict": {
+        "description": "Three-valued outcome of one evidence item against one requirement.",
+        "enum": [
+          "pass",
+          "fail",
+          "inconclusive"
+        ],
+        "title": "Verdict",
+        "type": "string"
+      },
+      "Waiver": {
+        "additionalProperties": false,
+        "properties": {
+          "author": {
+            "title": "Author",
+            "type": "string"
+          },
+          "claim_id": {
+            "title": "Claim Id",
+            "type": "string"
+          },
+          "justification": {
+            "title": "Justification",
+            "type": "string"
+          },
+          "requirement_hash": {
+            "title": "Requirement Hash",
+            "type": "string"
+          }
+        },
+        "required": [
+          "author",
+          "justification",
+          "claim_id",
+          "requirement_hash"
+        ],
+        "title": "Waiver",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "title": "ReVal API",
+    "version": "0.0.1"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/health": {
+      "get": {
+        "description": "Liveness probe; does not open the project.",
+        "operationId": "health",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Health"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Health",
+        "tags": [
+          "health"
+        ]
+      }
+    },
+    "/api/v1/jobs/{job_id}": {
+      "get": {
+        "description": "Poll a job.",
+        "operationId": "get_job",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Job",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/api/v1/jobs/{job_id}/events": {
+      "get": {
+        "description": "Server-sent events: ``state`` on every change, ``progress`` once running, ``done`` at the end.",
+        "operationId": "stream_job_events",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "job_id",
+            "required": true,
+            "schema": {
+              "title": "Job Id",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "text/event-stream": {}
+            },
+            "description": "SSE: state, progress, done"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Stream Job Events",
+        "tags": [
+          "jobs"
+        ]
+      }
+    },
+    "/api/v1/projects": {
+      "get": {
+        "description": "Exactly one project exists (D27).",
+        "operationId": "list_projects",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ProjectInfo"
+                  },
+                  "title": "Response List Projects",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Projects",
+        "tags": [
+          "projects"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/claims": {
+      "get": {
+        "description": "Latest assessment of every claim, sorted by claim id.",
+        "operationId": "list_claims",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Snapshot id; default: the latest assessed one.",
+            "in": "query",
+            "name": "snapshot",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Snapshot id; default: the latest assessed one.",
+              "title": "Snapshot"
+            }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/Status"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Assessment"
+                  },
+                  "title": "Response List Claims",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Claims",
+        "tags": [
+          "claims"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/claims/{c}/assessment": {
+      "get": {
+        "description": "Latest assessment of one claim.",
+        "operationId": "get_assessment",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "c",
+            "required": true,
+            "schema": {
+              "title": "C",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "snapshot",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Snapshot"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Assessment"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Assessment",
+        "tags": [
+          "claims"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/claims/{c}/justification": {
+      "get": {
+        "description": "Deterministic justification text (same renderer as ``reval explain``).",
+        "operationId": "get_justification",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "c",
+            "required": true,
+            "schema": {
+              "title": "C",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "snapshot",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Snapshot"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Justification"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Justification",
+        "tags": [
+          "claims"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/diff": {
+      "get": {
+        "description": "Change set, evidence freshness and claim statuses between two snapshots.",
+        "operationId": "get_diff",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Snapshot id, id prefix or git revision.",
+            "in": "query",
+            "name": "from",
+            "required": true,
+            "schema": {
+              "description": "Snapshot id, id prefix or git revision.",
+              "title": "From",
+              "type": "string"
+            }
+          },
+          {
+            "description": "Same forms; default: the working tree.",
+            "in": "query",
+            "name": "to",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Same forms; default: the working tree.",
+              "title": "To"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiffResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Diff",
+        "tags": [
+          "diff"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/evidence/{e}": {
+      "get": {
+        "description": "One evidence record by id.",
+        "operationId": "get_evidence",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "e",
+            "required": true,
+            "schema": {
+              "title": "E",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Evidence"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Evidence",
+        "tags": [
+          "evidence"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/graph": {
+      "get": {
+        "description": "Evidence graph; ``focus`` (a node id such as ``claim:<id>``) keeps its cone and what it influences.",
+        "operationId": "get_graph",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "snapshot",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Snapshot"
+            }
+          },
+          {
+            "in": "query",
+            "name": "focus",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Focus"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GraphResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Graph",
+        "tags": [
+          "graph"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/plans": {
+      "post": {
+        "description": "Plan the cheapest runs restoring stale or inconclusive claims (with a budget: maximise restored).",
+        "operationId": "create_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PlanRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevalidationPlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Plan",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/plans/{plan_id}": {
+      "get": {
+        "description": "A stored plan by id.",
+        "operationId": "get_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevalidationPlan"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Plan",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/plans/{plan_id}/execute": {
+      "post": {
+        "description": "Start executing a stored plan in a background thread; poll ``get_job`` or stream its events.",
+        "operationId": "execute_plan",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "plan_id",
+            "required": true,
+            "schema": {
+              "title": "Plan Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JobRef"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Execute Plan",
+        "tags": [
+          "plans"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/reports": {
+      "post": {
+        "description": "Assess the snapshot (default: the working tree), build the report and store it.",
+        "operationId": "create_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SnapshotRef"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/reports/{report_id}": {
+      "get": {
+        "description": "A stored report as canonical JSON, self-contained HTML or Markdown.",
+        "operationId": "get_report",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "report_id",
+            "required": true,
+            "schema": {
+              "title": "Report Id",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": false,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "html",
+                "md"
+              ],
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Report"
+                }
+              },
+              "text/html": {},
+              "text/markdown": {}
+            },
+            "description": "format=json (default) returns the Report; html and md return rendered text."
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Report",
+        "tags": [
+          "reports"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/snapshots": {
+      "get": {
+        "description": "Stored snapshots, newest first.",
+        "operationId": "list_snapshots",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 100,
+              "maximum": 1000,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Offset",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/SnapshotSummary"
+                  },
+                  "title": "Response List Snapshots",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Snapshots",
+        "tags": [
+          "snapshots"
+        ]
+      },
+      "post": {
+        "description": "Snapshot the working tree and store it (idempotent on the snapshot id).",
+        "operationId": "create_snapshot",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Snapshot",
+        "tags": [
+          "snapshots"
+        ]
+      }
+    },
+    "/api/v1/projects/{p}/snapshots/{s}": {
+      "get": {
+        "description": "One snapshot (claims, requirements, subjects, ...) by id, unique id prefix, or git revision.\n\nThe UI needs requirement text and criticality next to each claim's assessment.",
+        "operationId": "get_snapshot",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "s",
+            "required": true,
+            "schema": {
+              "title": "S",
+              "type": "string"
+            }
+          },
+          {
+            "in": "path",
+            "name": "p",
+            "required": true,
+            "schema": {
+              "title": "P",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Snapshot"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Snapshot",
+        "tags": [
+          "snapshots"
+        ]
+      }
+    }
+  }
+}

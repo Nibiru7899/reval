@@ -1,0 +1,16 @@
+version: 1
+project: beam-toy
+quantities: {tip_deflection: mm, bending_stress: MPa}
+artifacts:
+  params: {kind: params, path: params/beam.yaml}
+  samples: {kind: dataset, path: inputs/samples.csv, key: [sample]}
+  surrogate: {kind: model, path: fitted/surrogate.json, derived_from: [samples]}
+requirements:
+  R-DEFL: {text: "Tip deflection stays at or below 15 mm.", quantity: tip_deflection, op: "<=", limit: 15, unit: mm, criticality: low}
+  R-STRESS: {text: "Peak bending stress stays at or below 150 MPa.", quantity: bending_stress, op: "<=", limit: 150, unit: MPa, criticality: low}
+subjects:
+  B1: {kind: design}
+claims:
+  - {id: C-DEFL, requirement: R-DEFL, subject: B1}
+  - {id: C-STRESS, requirement: R-STRESS, subject: B1}
+producers: [beam.producers]

@@ -111,3 +111,24 @@ def test_world_truth_fn_uses_world_peak() -> None:
     params = {"blocks": [[100.0, 1000.0, 10.0]], "coolant": 27.0, "ambient": 24.0}  # peak 60
     assert fn(params, {"pm_peak_limit_degC": 50.0}) is True
     assert fn(params, {"pm_peak_limit_degC": 60.0}) is False  # hitting the limit satisfies it
+
+
+def test_rq4_summary_counts_wrong_acceptances() -> None:
+    from bench.experiments.rq4 import rq4_summary
+
+    df = pd.DataFrame(
+        {
+            "cell": ["O1/point"] * 3,
+            "accepted": [True, True, False],
+            "truth": [True, False, True],
+        }
+    )
+    assert rq4_summary(df) == "O1/point: n=3 accepted=2 wrong_accept=1"
+
+
+def test_main_without_workspace_only_reports_the_design(capsys: pytest.CaptureFixture[str]) -> None:
+    from bench.experiments.rq4 import main
+
+    main([])
+    out = capsys.readouterr().out
+    assert "4 cells x 54 runs" in out and "--workspace" in out

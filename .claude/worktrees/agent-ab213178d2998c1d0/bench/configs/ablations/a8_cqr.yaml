@@ -1,0 +1,20 @@
+# Ablation A8: split conformal replaced by CQR (Romano et al. 2019); needs a "cqr" entry in the uq artifacts (see docs/log/questions.md).
+# SMOKE configuration (P5-11): a quick end-to-end check of the bench, NOT results.
+# ~2 scenarios per change type, both tiers, 2 base-snapshot clusters per tier. Target: < 30 min on 20 cores.
+name: a8_cqr
+project: examples/motor_thermal
+motor: true
+seed: 0                      # development seed (the final run uses fresh seeds, docs/06 section 6)
+generate:
+  instances_per_type: 2
+  n_base_snapshots: 2
+  tiers: [A, B]
+  t5_requirements: [R-PM-MAX, R-SW-MAX]
+  t6_assumptions: [A-coolant-range, A-flow-sens]
+  subset: {n_recorded: 12, n_parametric: 12, parametric_out_of_domain: 3, n_current_limit: 4, model_kind: hgb}
+epsilon: {pm_peak: 0.878, sw_peak: 0.868, is_peak: 0.0, shaft_d: 0.0}
+methods: [reval, B0, B1, B2, B3, B4]
+reval: {decisiveness_aware: true, max_rounds: 3}
+lptn_args: [--max-profiles, "12", --max-nfev, "60"]
+jobs: 6
+settings: {interval_method: cqr}

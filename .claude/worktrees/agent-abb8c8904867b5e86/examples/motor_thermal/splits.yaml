@@ -1,0 +1,81 @@
+train:
+- 2
+- 5
+- 9
+- 10
+- 12
+- 13
+- 14
+- 17
+- 18
+- 21
+- 24
+- 26
+- 27
+- 29
+- 32
+- 36
+- 42
+- 43
+- 44
+- 46
+- 47
+- 49
+- 51
+- 52
+- 53
+- 54
+- 55
+- 56
+- 57
+- 61
+- 62
+- 63
+- 64
+- 67
+- 68
+- 70
+- 71
+- 74
+- 75
+- 78
+- 80
+- 81
+calib:
+- 3
+- 6
+- 7
+- 11
+- 30
+- 31
+- 45
+- 48
+- 50
+- 58
+test:
+- 4
+- 15
+- 16
+- 19
+- 20
+- 23
+- 41
+- 59
+- 60
+- 65
+- 69
+- 72
+- 76
+- 79
+reserve:
+- 8
+- 66
+- 73
+published_test_ids:
+- 65
+- 72
+seed: 0
+source_note: 'Published generalization profiles of the Kirchgaessner et al. line of work: validation profile
+  58, test profiles 65 and 72, as cited in arXiv:2511.16093 (citing the original spec). VERIFY against
+  the upb-lea code before relying on these ids. Profile 58 is kept in calib. Extra test profiles are drawn
+  with the seed to reach ~20 percent of profiles.'

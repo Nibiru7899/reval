@@ -150,15 +150,71 @@ def _run_unchecked(
     return pd.DataFrame(rows)
 
 
+def load_tier_b_artifacts(
+    workspace: Path, world_path: Path, model_artifact: str = "tpm_hgb", bound_scale: float = 1.25
+) -> tuple[Any, Any, Any, Any, list[tuple[float, float]], TruthFn]:
+    """Model, conformal, AD, drive map, search bounds and truth function of a built Tier B base snapshot.
+
+    ``workspace`` is a ``bench/cache/bases/B<cluster>-*`` repository (it holds ``models/`` and ``data/``);
+    ``world_path`` is the calibrated ``world.json``. Bounds extend ``bound_scale`` times past the train 99.5 %
+    quantile, as in ``scripts/optimize.py``. The truth plant is the neutral ``PhysicalParams()``: the base
+    snapshot has no physical change applied.
+    """
+    import joblib
+    from motor.models import load
+    from motor.splits import load_splits, split_frame
+
+    from bench.world.calibrate import load_world
+    from reval.uq.domain import ApplicabilityDomain
+
+    models = workspace / "models"
+    model = load(models / f"{model_artifact}.joblib")
+    art = joblib.load(models / f"uq_{model_artifact}.joblib")
+    ad = ApplicabilityDomain.from_dict(art["ad"])
+    drive_map = joblib.load(models / "drive_map.joblib")
+    train = split_frame(
+        pd.read_parquet(workspace / "data" / "processed" / "measures.parquet"),
+        load_splits(workspace / "splits.yaml"),
+        "train",
+    )
+    q_t = float(train["torque"].quantile(0.995))
+    q_w = float(train["motor_speed"].quantile(0.995))
+    bounds = [(0.0, bound_scale * q_t), (0.0, bound_scale * q_w)] * 3
+    truth = world_truth_fn(load_world(world_path), PhysicalParams(), drive_map)
+    return model, art["conformal"], ad, drive_map, bounds, truth
+
+
 def main(argv: Sequence[str] | None = None) -> None:
-    """Load the config and report the design; the Tier B workspace wiring is done by the pilot (P5-17)."""
+    """Run the experiment on a Tier B base snapshot and write ``<out>/rq4.parquet`` (read by figures)."""
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--config", type=Path, default=Path("bench/configs/rq4.yaml"))
-    cfg = load_config(ap.parse_args(argv).config)
-    print(
-        f"RQ4: {len(CELLS)} cells x {cfg.runs_per_cell} runs; "
-        "call run_rq4() with the Tier B project's artifacts."
+    ap.add_argument("--workspace", type=Path, default=None, help="built Tier B base (bench/cache/bases/B000-*)")
+    ap.add_argument("--world", type=Path, default=Path("bench/cache/world/world.json"))
+    ap.add_argument("--model-artifact", default="tpm_hgb")
+    ap.add_argument("--out", type=Path, default=None, help="results directory; rq4.parquet is written here")
+    args = ap.parse_args(argv)
+    cfg = load_config(args.config)
+    print(f"RQ4: {len(CELLS)} cells x {cfg.runs_per_cell} runs")
+    if args.workspace is None or args.out is None:
+        print("pass --workspace and --out to run it on the Tier B artifacts")
+        return
+    model, conformal, ad, drive_map, bounds, truth = load_tier_b_artifacts(
+        args.workspace, args.world, args.model_artifact
     )
+    df = run_rq4(cfg, model, conformal, ad, drive_map, bounds, truth)
+    args.out.mkdir(parents=True, exist_ok=True)
+    df.to_parquet(args.out / "rq4.parquet")
+    print(rq4_summary(df))
+
+
+def rq4_summary(df: pd.DataFrame) -> str:
+    """Per-cell accepted / wrong-acceptance counts (a console digest; the figures script owns the table)."""
+    lines = []
+    for cell, g in df.groupby("cell", sort=True):
+        acc = g[g["accepted"]]
+        lines.append(f"{cell}: n={len(g)} accepted={len(acc)} wrong_accept={int(acc['truth'].sum())}")
+    return "
+".join(lines)
 
 
 if __name__ == "__main__":
