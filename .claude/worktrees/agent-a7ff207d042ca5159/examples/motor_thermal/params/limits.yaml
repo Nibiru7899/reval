@@ -1,0 +1,7 @@
+# Study parameters, not manufacturer ratings.
+# Derived on 2026-10-28 from TRAIN profiles only (splits.yaml, seed 0) by the rule in docs/tasks/phase-0-foundations.md (P0-06):
+# about the 90th-95th percentile of 30-min window peaks, rounded to 5 degC. Details: docs/log/2026-10-28-limits.md
+pm_peak_limit_degC: 90
+sw_peak_limit_degC: 130
+inverter_current_limit_A: 315
+shaft_d_limit_mm: 30.05

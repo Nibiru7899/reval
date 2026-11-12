@@ -1,0 +1,21 @@
+# COST SENSITIVITY (P5-14, docs/06 section 3): re-plan with the cost of every bench (MEASUREMENT) producer
+# set to 20, 100 and 500; all other producer costs stay as declared. The producer-result cache is keyed
+# without cost, so only the planning is redone. Same scenarios/seed as `full.yaml` (copy its fields when
+# that file changes); `cost_profiles` maps each row tag to the bench cost. Run: python -m bench.run --config <this>
+name: cost_sensitivity
+project: examples/motor_thermal
+motor: true
+seed: 0                      # development seed; the final run (P5-16) uses the pre-registered fresh seeds
+generate:
+  instances_per_type: 2
+  n_base_snapshots: 2
+  tiers: [A, B]
+  t5_requirements: [R-PM-MAX, R-SW-MAX]
+  t6_assumptions: [A-coolant-range, A-flow-sens]
+  subset: {n_recorded: 12, n_parametric: 12, parametric_out_of_domain: 3, n_current_limit: 4, model_kind: hgb}
+epsilon: {pm_peak: 0.878, sw_peak: 0.868, is_peak: 0.0, shaft_d: 0.0}
+methods: [reval, B0, B1, B2, B3, B4]
+reval: {planner: ilp, decisiveness_aware: true, max_rounds: 3}
+lptn_args: [--max-profiles, "12", --max-nfev, "60"]
+jobs: 6
+cost_profiles: {bench20: 20, bench100: 100, bench500: 500}

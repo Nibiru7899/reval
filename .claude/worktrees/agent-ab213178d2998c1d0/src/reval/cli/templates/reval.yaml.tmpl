@@ -1,0 +1,32 @@
+# ReVal manifest (docs/03-domain-model.md is the contract). Edit, then run `reval snapshot --write`.
+# Everything below `quantities` is commented out: uncomment and adapt one entity at a time.
+version: 1
+project: my-project
+
+# Every quantity carries a unit. Absolute temperatures are degC; temperature differences are K.
+quantities: {temp_peak: degC}
+
+# Artifacts: files whose content hash ReVal tracks. kind: dataset | model | params | code | doc
+# artifacts:
+#   params: {kind: params, path: params/params.yaml}
+#   data:   {kind: dataset, path: data/data.csv, key: [group]}
+#   surrogate: {kind: model, path: models/surrogate.json, derived_from: [data]}
+
+# Assumptions that bound the validity of evidence (a sensitivity tolerance refers to one of these).
+# assumptions:
+#   A-ambient: {statement: "Ambient temperature stays within the tested range.", variable: ambient, unit: degC, bounds: [10, 40]}
+
+# Requirements: what must hold, against a declared limit (not a certification).
+# requirements:
+#   R-TEMP: {text: "Peak temperature stays at or below 80 degC.", quantity: temp_peak, op: "<=", limit: 80, unit: degC, criticality: medium}
+
+# Subjects: the things a claim is about (a duty cycle, a design, ...).
+# subjects:
+#   S1: {kind: duty_cycle, params: {load: [1.0, 2.0]}}
+
+# Claims: a requirement holding for a subject.
+# claims:
+#   - {id: C-S1-TEMP, requirement: R-TEMP, subject: S1}
+
+# Python modules that register producers with @reval.producer (relative to this folder).
+# producers: [my_project.producers]

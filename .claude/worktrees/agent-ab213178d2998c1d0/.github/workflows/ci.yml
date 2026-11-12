@@ -1,0 +1,110 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  python:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # reval diff reads lock files at other revisions
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install -e ".[dev,motor,server]"
+      - name: Lint
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Type-check
+        run: mypy src
+      - name: Test
+        run: pytest -m "not data and not slow" --cov=reval --cov-report=term-missing
+      - name: Core coverage gate
+        run: pytest tests/unit/core tests/property -m "not slow" --cov=reval.core --cov-fail-under=90
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install -e ".[dev,docs]"
+      - name: CLI reference is current
+        run: python scripts/gen_cli_docs.py --check
+      - name: Build site
+        run: mkdocs build --strict
+
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install -e ".[dev]"
+      - name: Build and install the wheel in a fresh venv
+        run: pytest -m slow tests/integration/test_packaging.py
+
+  postgres:
+    # Migrations and the store against a real PostgreSQL (ADR 0003). Cut line 2: drop if behind.
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_USER: reval
+          POSTGRES_PASSWORD: reval-ci-only
+          POSTGRES_DB: reval
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U reval"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      REVAL_TEST_POSTGRES_URL: postgresql+psycopg://reval:reval-ci-only@localhost:5432/reval
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        run: python -m pip install -e ".[dev,motor,server,postgres]"
+      - name: Apply migrations
+        run: REVAL_DATABASE_URL="$REVAL_TEST_POSTGRES_URL" reval db upgrade
+      - name: Migration and store tests on PostgreSQL
+        run: pytest tests/integration/test_migrations.py tests/unit/store -m "not data and not slow"
+
+  web:
+    # The workspace UI (P6-06): typecheck, build and component/a11y tests. The client types are generated
+    # (npm run gen:api) and committed; this job fails if they no longer compile against the app.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Install
+        run: npm --prefix web ci
+      - name: Build
+        run: npm --prefix web run build
+      - name: Test
+        run: npm --prefix web test

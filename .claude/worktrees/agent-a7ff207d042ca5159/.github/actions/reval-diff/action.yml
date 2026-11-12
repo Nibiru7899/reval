@@ -1,0 +1,83 @@
+name: reval-diff
+description: >-
+  Run `reval diff` between the pull request base and HEAD (lock files only, no data) and post or update
+  one pull request comment with the Markdown result.
+inputs:
+  project:
+    description: Project directory (contains reval.yaml and reval.lock.json), relative to the workspace.
+    default: "."
+  base-ref:
+    description: Base branch to compare against.
+    default: ${{ github.base_ref }}
+  install:
+    description: pip requirement that installs reval ("." installs the checked-out repository).
+    default: "."
+  python-version:
+    description: Python version.
+    default: "3.12"
+  fail-on:
+    description: "Fail the step on: stale (exit code 1 or 2), violated (exit code 2), never. A usage or config error (3) always fails."
+    default: stale
+  comment:
+    description: Post or update the pull request comment ("true" or "false").
+    default: "true"
+outputs:
+  exit-code:
+    description: Exit code of `reval diff` (0 accepted, 1 stale or inconclusive, 2 violated, 3 error).
+    value: ${{ steps.diff.outputs.exit-code }}
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+    - name: Install reval
+      shell: bash
+      env:
+        INSTALL: ${{ inputs.install }}
+      run: python -m pip install "$INSTALL"
+    - name: reval diff
+      id: diff
+      shell: bash
+      working-directory: ${{ inputs.project }}
+      env:
+        BASE_REF: ${{ inputs.base-ref }}
+      run: |
+        set +e
+        reval diff "origin/${BASE_REF}" HEAD --format markdown > "$RUNNER_TEMP/reval.md"
+        code=$?
+        set -e
+        echo "exit-code=${code}" >> "$GITHUB_OUTPUT"
+        cat "$RUNNER_TEMP/reval.md" >> "$GITHUB_STEP_SUMMARY"
+    - name: Post or update PR comment
+      if: inputs.comment == 'true' && github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+      uses: actions/github-script@v7
+      env:
+        REPORT_PATH: ${{ runner.temp }}/reval.md
+      with:
+        script: |
+          const fs = require('fs');
+          const marker = '<!-- reval-diff -->';
+          const body = marker + '\n' + fs.readFileSync(process.env.REPORT_PATH, 'utf8');
+          const { owner, repo } = context.repo;
+          const issue_number = context.issue.number;
+          const comments = await github.paginate(github.rest.issues.listComments, { owner, repo, issue_number });
+          const existing = comments.find((c) => c.body && c.body.startsWith(marker));
+          if (existing) {
+            await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body });
+          } else {
+            await github.rest.issues.createComment({ owner, repo, issue_number, body });
+          }
+    - name: Apply exit code
+      shell: bash
+      env:
+        CODE: ${{ steps.diff.outputs.exit-code }}
+        FAIL_ON: ${{ inputs.fail-on }}
+      run: |
+        if [ "$CODE" = "3" ]; then exit 3; fi
+        case "$FAIL_ON" in
+          stale) exit "$CODE" ;;
+          violated) if [ "$CODE" = "2" ]; then exit 2; fi ;;
+          never) ;;
+          *) echo "unknown fail-on: $FAIL_ON" >&2; exit 3 ;;
+        esac

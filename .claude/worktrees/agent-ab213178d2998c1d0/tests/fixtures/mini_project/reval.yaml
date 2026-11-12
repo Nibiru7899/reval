@@ -1,0 +1,24 @@
+version: 1
+project: mini
+quantities: {temp_peak: degC, shaft_d: mm}
+artifacts:
+  params: {kind: params, path: params/params.yaml}
+  data: {kind: dataset, path: data/data.csv, key: [group]}
+  surrogate: {kind: model, path: models/surrogate.json, derived_from: [data]}
+assumptions:
+  A-ambient: {statement: "Ambient temperature stays within the tested range.", variable: ambient, unit: degC, bounds: [10, 40]}
+  A-sim-sens: {statement: "Simulator sensitivity to load scale is bounded over the valid range.", variable: load_scale, unit: dimensionless, bounds: [0.5, 1.5]}
+requirements:
+  R-TEMP: {text: "Peak temperature stays at or below 80 degC.", quantity: temp_peak, op: "<=", limit: 80, unit: degC, criticality: medium}
+  R-TEMP-HI: {text: "Peak temperature stays at or below 80 degC (high criticality).", quantity: temp_peak, op: "<=", limit: 80, unit: degC, criticality: high}
+  R-SHAFT: {text: "Shaft diameter at most 30.05 mm.", quantity: shaft_d, op: "<=", limit: 30.05, unit: mm, criticality: low}
+subjects:
+  S1: {kind: duty_cycle, params: {load: [1.0, 2.0]}}
+  S2: {kind: duty_cycle, params: {load: [2.0, 3.9]}}
+  D1: {kind: design}
+claims:
+  - {id: C-S1-TEMP, requirement: R-TEMP, subject: S1}
+  - {id: C-S2-TEMP, requirement: R-TEMP, subject: S2}
+  - {id: C-S1-HI, requirement: R-TEMP-HI, subject: S1}
+  - {id: C-SHAFT, requirement: R-SHAFT, subject: D1}
+producers: [mini.producers]

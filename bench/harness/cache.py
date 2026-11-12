@@ -8,9 +8,11 @@ Nothing but the key decides a hit: a changed dependency, code, subject or settin
 
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import tempfile
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -63,10 +65,17 @@ class ProducerResultCache:
 
     def get(self, key: str) -> tuple[Evidence, ...] | None:
         path = self._path(key)
-        try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
-        except FileNotFoundError:
-            return None
+        raw: list[str] = []
+        for attempt in range(8):
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))
+                break
+            except FileNotFoundError:
+                return None
+            except PermissionError:  # Windows: the entry is being replaced by a concurrent writer
+                if attempt == 7:
+                    raise
+                time.sleep(0.05 * (attempt + 1))
         # Evidence validates id == content_id, so a corrupted file raises instead of being trusted.
         return tuple(Evidence.model_validate_json(x) for x in raw)
 
@@ -76,7 +85,21 @@ class ProducerResultCache:
         fd, tmp = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             json.dump([e.model_dump_json() for e in evidence], fh)
-        os.replace(tmp, path)
+        # Windows refuses os.replace while another process has the target open (a concurrent reader or
+        # writer of the same key). The content is a pure function of the key, so retry, and if the entry
+        # exists after the retries the other writer already stored the identical evidence.
+        for attempt in range(8):
+            try:
+                os.replace(tmp, path)
+                return
+            except PermissionError:
+                if attempt == 7:
+                    break
+                time.sleep(0.05 * (attempt + 1))
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+        if not path.exists():
+            raise PermissionError(f"could not store cache entry {path}")
 
     def run(
         self,

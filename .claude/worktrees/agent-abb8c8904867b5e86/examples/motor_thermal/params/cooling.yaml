@@ -1,0 +1,4 @@
+# Coolant flow relative to the test-bench condition the dataset was recorded at (dimensionless, nominal 1.0).
+# This is the ONLY route by which coolant flow enters the models (D21): the LPTN maps it onto the coolant-side
+# resistance as R_ic = R_ic,0 * flow_scale ** -0.8; ML producers depend on it without a tolerance (fail-closed).
+flow_scale: 1.0

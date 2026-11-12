@@ -1,0 +1,19 @@
+# FULL configuration (docs/06 section 2). Instance counts are pilot-tunable (P5-17) and are fixed in the
+# pre-registration (P5-01); the final run (P5-16) uses fresh seeds never used in the pilot.
+name: full
+project: examples/motor_thermal
+motor: true
+seed: 0                      # development seed; replace by the pre-registered final seed
+generate:
+  instances_per_type: 10     # start value of the phase refinement; pilot sets the final count (target ~30)
+  n_base_snapshots: 30       # >= 30 distinct base snapshots per tier (bootstrap clusters)
+  tiers: [A, B]
+  t5_requirements: [R-PM-MAX, R-SW-MAX]
+  t6_assumptions: [A-coolant-range, A-flow-sens]
+  subset: {n_recorded: 12, n_parametric: 12, parametric_out_of_domain: 3, n_current_limit: 4, model_kind: hgb}
+# epsilon = 0.1 * median conformal half-width q-hat (pre-registered after the pilot).
+epsilon: {pm_peak: 0.878, sw_peak: 0.868, is_peak: 0.0, shaft_d: 0.0}
+methods: [reval, B0, B1, B2, B3, B4]
+reval: {planner: ilp, decisiveness_aware: true, max_rounds: 3}
+lptn_args: [--max-profiles, "12", --max-nfev, "60"]
+jobs: 6

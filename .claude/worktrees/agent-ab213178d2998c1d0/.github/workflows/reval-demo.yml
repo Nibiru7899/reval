@@ -1,0 +1,20 @@
+name: reval-demo
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  reval-diff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # reval diff reads reval.lock.json at the base revision
+      - uses: ./.github/actions/reval-diff
+        with:
+          project: examples/motor_thermal
+          install: ".[motor]"

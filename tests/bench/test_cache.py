@@ -28,3 +28,27 @@ def test_hit_is_byte_identical_and_key_tracks_dependencies(tmp_path: Path) -> No
     snap3 = open_project(root).snapshot()
     assert cache_key(snap, PID, "S1") != cache_key(snap3, PID, "S1")
     assert cache_key(snap, PID, "S1") != cache_key(snap, PID, "S2")
+
+
+def test_put_retries_when_windows_denies_the_rename(tmp_path: Path, monkeypatch) -> None:  # type: ignore[no-untyped-def]
+    """A concurrent reader/writer can make os.replace raise PermissionError on Windows; retry, never fail."""
+    import os
+
+    root = copy_mini(tmp_path)
+    cache = ProducerResultCache(tmp_path / "c")
+    proj = open_project(root)
+    snap = proj.snapshot()
+    ev, _ = cache.run(proj, snap, PID, "S1")
+    key = cache_key(snap, PID, "S1")
+    real, calls = os.replace, []
+
+    def flaky(src, dst):  # type: ignore[no-untyped-def]
+        calls.append(1)
+        if len(calls) < 3:
+            raise PermissionError("denied")
+        real(src, dst)
+
+    monkeypatch.setattr("bench.harness.cache.os.replace", flaky)
+    cache.put(key, ev)
+    assert len(calls) == 3
+    assert cache.get(key) is not None

@@ -1,0 +1,335 @@
+{
+  "report_id": "00daff293224d872",
+  "created_at": "2026-01-01T00:00:00+00:00",
+  "reval_version": "0.0.1",
+  "project": "mini",
+  "snapshot_id": "886d7c2f321ea7c02e08a8ffbafed406dcef755d8e5500f74f6c0da0b4449762",
+  "git_rev": null,
+  "disclaimer": "ReVal reports the state of recorded evidence against declared requirements. It does not certify safety.",
+  "summary": {
+    "inconclusive": 0,
+    "stale": 0,
+    "supported": 3,
+    "violated": 1,
+    "waived": 0
+  },
+  "claims": [
+    {
+      "id": "C-S1-HI",
+      "requirement_id": "R-TEMP-HI",
+      "requirement": "Peak temperature stays at or below 80 degC (high criticality).",
+      "quantity": "temp_peak",
+      "op": "<=",
+      "limit": 80.0,
+      "unit": "degC",
+      "criticality": "high",
+      "subject": "S1",
+      "status": "supported",
+      "satisfied_clause": 0,
+      "reasons": [
+        {
+          "code": "policy_satisfied",
+          "message": "policy high clause 0 is satisfied by recorded evidence",
+          "evidence_ids": [
+            "fbb4fcdea17254c0ce59ce4fcd760b78f5c838279ca4d0fdfd3af322bba76f8a"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "id": "1de15eb7ceda38c74088099741f46413c9c11db9f08e9c2b161eabc0a6ae3adf",
+          "producer": "mini.producers:predict_temp",
+          "producer_kind": "ml_prediction",
+          "subject_id": "S1",
+          "verdict": "pass",
+          "recorded_verdict": "pass",
+          "freshness": "fresh_exact",
+          "point": 40.0,
+          "interval": {
+            "lo": 39.5,
+            "hi": 40.5,
+            "unit": "degC"
+          },
+          "used_in_clause": false,
+          "derived_from_evidence": null,
+          "provenance": {
+            "producer_code_hash": "05675be7926e5d41c4fa2fbd1ebaefccb81184030dc0dea58d1493c7b9e5ef2d",
+            "seed": 139517185,
+            "snapshot_id": "886d7c2f321ea7c02e08a8ffbafed406dcef755d8e5500f74f6c0da0b4449762",
+            "uncertainty_kind": "conformal"
+          }
+        },
+        {
+          "id": "4992c356ce1eba174243280471a118cab032f130f7f238f8ec75f815ab76295e",
+          "producer": "mini.producers:sim_temp",
+          "producer_kind": "physics_sim",
+          "subject_id": "S1",
+          "verdict": "pass",
+          "recorded_verdict": "pass",
+          "freshness": "fresh_exact",
+          "point": 60.0,
+          "interval": {
+            "lo": 58.0,
+            "hi": 62.0,
+            "unit": "degC"
+          },
+          "used_in_clause": false,
+          "derived_from_evidence": null,
+          "provenance": {
+            "producer_code_hash": "8df1b8610fdfdb12d0d8242fc54351315c3ae8bc6656e965b5836a4a5909157f",
+            "seed": 1793081284,
+            "snapshot_id": "886d7c2f321ea7c02e08a8ffbafed406dcef755d8e5500f74f6c0da0b4449762",
+            "uncertainty_kind": "model_form"
+          }
+        },
+        {
+          "id": "fbb4fcdea17254c0ce59ce4fcd760b78f5c838279ca4d0fdfd3af322bba76f8a",
+          "producer": "mini.producers:measure_temp",
+          "producer_kind": "measurement",
+          "subject_id": "S1",
+          "verdict": "pass",
+          "recorded_verdict": "pass",
+          "freshness": "fresh_exact",
+          "point": 39.5,
+          "interval": {
+            "lo": 39.0,
+            "hi": 40.0,
+            "unit": "degC"
+          },
+          "used_in_clause": true,
+          "derived_from_evidence": null,
+          "provenance": {
+            "producer_code_hash": "e363ed9c7f33718c3e8c2f7f26373d228599ac6f367d4c4dd33d64e28a2f3037",
+            "seed": 4171125925,
+            "snapshot_id": "886d7c2f321ea7c02e08a8ffbafed406dcef755d8e5500f74f6c0da0b4449762",
+            "uncertainty_kind": "sensor"
+          }
+        }
+      ],
+      "input_hash": "7de178b4f44c284e161ca5cf362cc0634058de2164317682f8c6a463c8c200d4"
+    },
+    {
+      "id": "C-S1-TEMP",
+      "requirement_id": "R-TEMP",
+      "requirement": "Peak temperature stays at or below 80 degC.",
+      "quantity": "temp_peak",
+      "op": "<=",
+      "limit": 80.0,
+      "unit": "degC",
+      "criticality": "medium",
+      "subject": "S1",
+      "status": "supported",
+      "satisfied_clause": 0,
+      "reasons": [
+        {
+          "code": "policy_satisfied",
+          "message": "policy medium clause 0 is satisfied by recorded evidence",
+          "evidence_ids": [
+            "1de15eb7ceda38c74088099741f46413c9c11db9f08e9c2b161eabc0a6ae3adf",
+            "4992c356ce1eba174243280471a118cab032f130f7f238f8ec75f815ab76295e"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "id": "1de15eb7ceda38c74088099741f46413c9c11db9f08e9c2b161eabc0a6ae3adf",
+          "producer": "mini.producers:predict_temp",
+          "producer_kind": "ml_prediction",
+          "subject_id": "S1",
+          "verdict": "pass",
+          "recorded_verdict": "pass",
+          "freshness": "fresh_exact",
+          "point": 40.0,
+          "interval": {
+            "lo": 39.5,
+            "hi": 40.5,
+            "unit": "degC"
+          },
+          "used_in_clause": true,
+          "derived_from_evidence": null,
+          "provenance": {
+            "producer_code_hash": "05675be7926e5d41c4fa2fbd1ebaefccb81184030dc0dea58d1493c7b9e5ef2d",
+            "seed": 139517185,
+            "snapshot_id": "886d7c2f321ea7c02e08a8ffbafed406dcef755d8e5500f74f6c0da0b4449762",
+            "uncertainty_kind": "conformal"
+          }
+        },
+        {
+          "id": "4992c356ce1eba174243280471a118cab032f130f7f238f8ec75f815ab76295e",
+          "producer": "mini.producers:sim_temp",
+          "producer_kind": "physics_sim",
+          "subject_id": "S1",
+          "verdict": "pass",
+          "recorded_verdict": "pass",
+          "freshness": "fresh_exact",
+          "point": 60.0,
+          "interval": {
+            "lo": 58.0,
+            "hi": 62.0,
+            "unit": "degC"
+          },
+          "used_in_clause": true,
+          "derived_from_evidence": null,
+          "provenance": {
+            "producer_code_hash": "8df1b8610fdfdb12d0d8242fc54351315c3ae8bc6656e965b5836a4a5909157f",
+            "seed": 1793081284,
+            "snapshot_id": "886d7c2f321ea7c02e08a8ffbafed406dcef755d8e5500f74f6c0da0b4449762",
+            "uncertainty_kind": "model_form"
+          }
+        },
+        {
+          "id": "fbb4fcdea17254c0ce59ce4fcd760b78f5c838279ca4d0fdfd3af322bba76f8a",
+          "producer": "mini.producers:measure_temp",
+          "producer_kind": "measurement",
+          "subject_id": "S1",
+          "verdict": "pass",
+          "recorded_verdict": "pass",
+          "freshness": "fresh_exact",
+          "point": 39.5,
+          "interval": {
+            "lo": 39.0,
+            "hi": 40.0,
+            "unit": "degC"
+          },
+          "used_in_clause": false,
+          "derived_from_evidence": null,
+          "provenance": {
+            "producer_code_hash": "e363ed9c7f33718c3e8c2f7f26373d228599ac6f367d4c4dd33d64e28a2f3037",
+            "seed": 4171125925,
+            "snapshot_id": "886d7c2f321ea7c02e08a8ffbafed406dcef755d8e5500f74f6c0da0b4449762",
+            "uncertainty_kind": "sensor"
+          }
+        }
+      ],
+      "input_hash": "bdc1cfa0125984ac2f29cbd54c02f352e97f83621088ee0ac193f8ec5f952c48"
+    },
+    {
+      "id": "C-S2-TEMP",
+      "requirement_id": "R-TEMP",
+      "requirement": "Peak temperature stays at or below 80 degC.",
+      "quantity": "temp_peak",
+      "op": "<=",
+      "limit": 80.0,
+      "unit": "degC",
+      "criticality": "medium",
+      "subject": "S2",
+      "status": "violated",
+      "satisfied_clause": null,
+      "reasons": [
+        {
+          "code": "requirement_violated",
+          "message": "fresh evidence shows the requirement is not met",
+          "evidence_ids": [
+            "4eba64bc08d07e6e25fcfb871045a92f8dbe0f9165ec5b08e62ae39876fc3026"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "id": "06542071ef297c6e2485652c9f4657d80c3815365344e93e9078a5c5dc685a0f",
+          "producer": "mini.producers:predict_temp",
+          "producer_kind": "ml_prediction",
+          "subject_id": "S2",
+          "verdict": "inconclusive",
+          "recorded_verdict": "inconclusive",
+          "freshness": "fresh_exact",
+          "point": 59.0,
+          "interval": {
+            "lo": 58.5,
+            "hi": 59.5,
+            "unit": "degC"
+          },
+          "used_in_clause": false,
+          "derived_from_evidence": null,
+          "provenance": {
+            "producer_code_hash": "05675be7926e5d41c4fa2fbd1ebaefccb81184030dc0dea58d1493c7b9e5ef2d",
+            "seed": 139517185,
+            "snapshot_id": "886d7c2f321ea7c02e08a8ffbafed406dcef755d8e5500f74f6c0da0b4449762",
+            "uncertainty_kind": "conformal"
+          }
+        },
+        {
+          "id": "4eba64bc08d07e6e25fcfb871045a92f8dbe0f9165ec5b08e62ae39876fc3026",
+          "producer": "mini.producers:sim_temp",
+          "producer_kind": "physics_sim",
+          "subject_id": "S2",
+          "verdict": "fail",
+          "recorded_verdict": "fail",
+          "freshness": "fresh_exact",
+          "point": 98.0,
+          "interval": {
+            "lo": 96.0,
+            "hi": 100.0,
+            "unit": "degC"
+          },
+          "used_in_clause": false,
+          "derived_from_evidence": null,
+          "provenance": {
+            "producer_code_hash": "8df1b8610fdfdb12d0d8242fc54351315c3ae8bc6656e965b5836a4a5909157f",
+            "seed": 1793081284,
+            "snapshot_id": "886d7c2f321ea7c02e08a8ffbafed406dcef755d8e5500f74f6c0da0b4449762",
+            "uncertainty_kind": "model_form"
+          }
+        }
+      ],
+      "input_hash": "dec73e2911f1117c5684c9d65e269ec2a021cf6acb6bb25785bb0c009d031822"
+    },
+    {
+      "id": "C-SHAFT",
+      "requirement_id": "R-SHAFT",
+      "requirement": "Shaft diameter at most 30.05 mm.",
+      "quantity": "shaft_d",
+      "op": "<=",
+      "limit": 30.05,
+      "unit": "mm",
+      "criticality": "low",
+      "subject": "D1",
+      "status": "supported",
+      "satisfied_clause": 3,
+      "reasons": [
+        {
+          "code": "policy_satisfied",
+          "message": "policy low clause 3 is satisfied by recorded evidence",
+          "evidence_ids": [
+            "b8c631de7a86e1923f397fef0afe30812f588f63928bece1cf4839b1746c729f"
+          ]
+        }
+      ],
+      "evidence": [
+        {
+          "id": "b8c631de7a86e1923f397fef0afe30812f588f63928bece1cf4839b1746c729f",
+          "producer": "mini.producers:shaft_check",
+          "producer_kind": "analytic",
+          "subject_id": "D1",
+          "verdict": "pass",
+          "recorded_verdict": "pass",
+          "freshness": "fresh_exact",
+          "point": 30.0,
+          "interval": {
+            "lo": 30.0,
+            "hi": 30.0,
+            "unit": "mm"
+          },
+          "used_in_clause": true,
+          "derived_from_evidence": null,
+          "provenance": {
+            "producer_code_hash": "b804710ec2e6404d8d4ea0a3afd10a5937da0e0d95bf607f70f955c64f47db3b",
+            "seed": 970026045,
+            "snapshot_id": "886d7c2f321ea7c02e08a8ffbafed406dcef755d8e5500f74f6c0da0b4449762",
+            "uncertainty_kind": "exact"
+          }
+        }
+      ],
+      "input_hash": "a514876c717590b5905d5d743891d8142ccb3a14e6e8061afcd7625abdaa9254"
+    }
+  ],
+  "changes": [],
+  "plan": null,
+  "hashes": {
+    "C-S1-HI": "7de178b4f44c284e161ca5cf362cc0634058de2164317682f8c6a463c8c200d4",
+    "C-S1-TEMP": "bdc1cfa0125984ac2f29cbd54c02f352e97f83621088ee0ac193f8ec5f952c48",
+    "C-S2-TEMP": "dec73e2911f1117c5684c9d65e269ec2a021cf6acb6bb25785bb0c009d031822",
+    "C-SHAFT": "a514876c717590b5905d5d743891d8142ccb3a14e6e8061afcd7625abdaa9254"
+  },
+  "report_hash": "00daff293224d87296e4886207cdb8ae0fcd4f8085c35ee31ec48fa13c2748ec"
+}

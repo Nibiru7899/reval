@@ -1,0 +1,22 @@
+C-S1-TEMP: SUPPORTED  [R-TEMP: temp_peak <= 80 degC; criticality medium; subject S1]
+|-- reasons
+|   `-- policy_satisfied: policy medium clause 1 is satisfied by recorded evidence
+|       `-- evidence: fbb4fcdea172
+|-- clauses (policy medium)
+|   |-- clause 0 [not satisfied]: ml_prediction (in domain) AND physics_sim (independent of ml_prediction)
+|   |-- clause 1 [satisfied]: measurement
+|   `-- clause 2 [not satisfied]: analytic (fidelity>=3)
+`-- evidence
+    |-- 1de15eb7ceda mini.producers:predict_temp (ml_prediction): verdict pass, recorded pass, freshness invalidated, interval [39.5, 40.5] degC
+    |   `-- dependencies
+    |       |-- data[temp,x]@f1ec9444
+    |       |-- params#/load/scale@fcc94e81
+    |       `-- surrogate@55618f0e
+    |-- 96b25756d62b mini.producers:sim_temp (physics_sim): verdict pass, recorded pass, freshness carry_forward, interval [55, 65] degC
+    |   |-- carried forward from 4992c356ce1e
+    |   `-- dependencies
+    |       |-- params#/load/scale@fcc94e81
+    |       `-- params#/sim/gain@9a9feb8c
+    `-- fbb4fcdea172 mini.producers:measure_temp (measurement): verdict pass, recorded pass, freshness fresh_exact, interval [39, 40] degC, used in satisfied clause
+        `-- dependencies
+            `-- data[temp]@f2ecad49
